@@ -43,6 +43,9 @@ namespace TTN
             "Шапка.Грузоотправитель",
             "Шапка.Грузополучатель",
             "Шапка.ОснованиеОтпуска",
+            "ВсегоСуммаНДС",
+            "ВсегоCтоимостьCНДС",
+            "ОтпускРазрешил",
         };
         public List<Grid> grid = new List<Grid>();
 
@@ -62,10 +65,10 @@ namespace TTN
         }
         private void AddData(int type, string data)
         {
-            Grid clonedGrid = CreateDuplicatedGrid(type,data);
+            Grid clonedGrid = CreateDuplicatedGrid(type, data);
             MainStackPanel.Children.Add(clonedGrid);
         }
-        
+
 
         public void TesseractStart(object sender, RoutedEventArgs e)
         {
@@ -231,7 +234,7 @@ namespace TTN
                 Filter filter = new Filter();
                 filter.FilterWhite(pathfile, outputDirectory);
             }
-            
+
             List<string> rows = new List<string>();
             List<List<string>> listOfRows = new List<List<string>>();
 
@@ -247,7 +250,7 @@ namespace TTN
                             {
                                 iterator.Begin();
                                 int row = 1;
-                                double MaxX = 0;                                
+                                double MaxX = 0;
                                 double MaxY = 0;
                                 int nRow = 1;
                                 Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png"));
@@ -290,7 +293,7 @@ namespace TTN
                                     }
                                     rows.Add(" " + currentWord);
                                     //MessageBox.Show(listOfRows.Count.ToString() + "\n" + rows.Count.ToString() + "\n" + nRow);
-                                    if(listOfRows.Count != nRow)
+                                    if (listOfRows.Count != nRow)
                                     {
                                         listOfRows.Add(rows);
                                     }
@@ -320,6 +323,9 @@ namespace TTN
             bool boolGruzootpav = false;
             bool boolGruzopoluch = false;
             bool boolOsnovanOtpusk = false;
+            bool boolVsegoSummaNDS = false;
+            bool boolVsegoStoimostSNDS = false;
+            bool boolOtpuskRazreshil = false;
 
             for (int i = 0; i < listOfRows.Count; i++)
             {
@@ -332,7 +338,7 @@ namespace TTN
                         string data = null;
                         foreach (var row in listOfRows)
                         {
-                            string line = string.Join("",row);
+                            string line = string.Join("", row);
                             if (line.IndexOf("УНП", StringComparison.OrdinalIgnoreCase) >= 0)
                             {
                                 string[] lineData = line.Split();
@@ -366,22 +372,22 @@ namespace TTN
                         {
                             AddData(3, match.Value);
                             boolDateHead = true;
-                        }                        
+                        }
                     }
                     if (boolGruzootpav == false)
                     {
                         string text = string.Join("", listOfRows[i]);
                         List<string> textList = text.Split().ToList();
-                        for(int k =  0; k < textList.Count; k++)
+                        for (int k = 0; k < textList.Count; k++)
                         {
                             if (textList[k] == " " || textList[k] == "")
                             {
                                 textList.Remove(textList[k]);
                             }
                         }
-                        if(currentWord.IndexOf("Грузоотправитель", StringComparison.OrdinalIgnoreCase) >= 0 && textList.Count > 4)
+                        if (currentWord.IndexOf("Грузоотправитель", StringComparison.OrdinalIgnoreCase) >= 0 && textList.Count > 4)
                         {
-                            AddData(4, RemoveFirstWord(text));
+                            AddData(4, RemoveFirstWord(text,1));
                             boolGruzootpav = true;
                         }
                     }
@@ -407,8 +413,35 @@ namespace TTN
                         string text = string.Join("", listOfRows[i]);
                         if (text.IndexOf("Основание", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("отпуска", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
-                            AddData(6, RemoveFirstWord(text,2));
+                            AddData(6, RemoveFirstWord(text, 2));
                             boolOsnovanOtpusk = true;
+                        }
+                    }
+                    if (boolVsegoSummaNDS == false)
+                    {
+                        string text = string.Join("", listOfRows[i]);
+                        if (text.IndexOf("Всего", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("сумма", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("НДС", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            AddData(7, RemoveFirstWord(text, 3));
+                            boolVsegoSummaNDS = true;
+                        }
+                    }
+                    if (boolVsegoStoimostSNDS == false)
+                    {
+                        string text = string.Join("", listOfRows[i]);
+                        if (text.IndexOf("Всего", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("стоимость", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("с", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("НДС", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            AddData(8, RemoveFirstWord(text, 4));
+                            boolVsegoStoimostSNDS = true;
+                        }
+                    }
+                    if (boolOtpuskRazreshil == false)
+                    {
+                        string text = string.Join("", listOfRows[i]);
+                        if (text.IndexOf("Отпуск", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("разрешил", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            AddData(9, RemoveFirstWord(text, 2));
+                            boolOtpuskRazreshil = true;
                         }
                     }
                 }
@@ -425,21 +458,36 @@ namespace TTN
         public string RemoveFirstWord(string input, int n = 1)
         {
             int i = 1;
-            string[] listData = input.Split();
+            List<string> textList = input.Split().ToList();;
+            for (int k = 0; k < textList.Count; k++)
+            {
+                if (textList[k] == " " || textList[k] == "")
+                {
+                    textList.Remove(textList[k]);
+                }
+            }
             for (int j = 0; j < n; j++)
             {
-                i += listData[1].Length;
-            }         
-            if (string.IsNullOrWhiteSpace(input))
-            {
-                return input;
+                i += textList[j].Length + 1;
             }
-            int firstSpaceIndex = input.IndexOf(' ');
-            if (firstSpaceIndex == -1)
-            {
-                return "";
-            }
-            return input.Substring(firstSpaceIndex + i).TrimStart();
+
+
+
+
+
+
+
+
+            //if (string.IsNullOrWhiteSpace(input))
+            //{
+            //    return input;
+            //}
+            //int firstSpaceIndex = input.IndexOf(' ');
+            //if (firstSpaceIndex == -1)
+            //{
+            //    return "";
+            //}
+            return input.Substring(i).TrimStart();
         }
         private void DebugTesseractZone(string currentWord, Bitmap originalImage, Tesseract.Rect bounds, Bitmap copiedImage)
         {

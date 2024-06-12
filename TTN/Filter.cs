@@ -28,6 +28,7 @@ namespace TTN
                     ctx.Contrast(1.3f);
                 });
                 image.Save(Path.Combine(outpath, $"doc1.png"));
+                //image.Save("M://doc1.png");
             }
         }
     }
