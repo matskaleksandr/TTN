@@ -229,7 +229,7 @@ namespace TTN
         public void Scan(object sender, RoutedEventArgs e)
         {
             string outputDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "ConvertedImages");
-            if (checkFilter.IsChecked == true)
+            if (checkFilter.IsChecked == false)
             {
                 Filter filter = new Filter();
                 filter.FilterWhite(pathfile, outputDirectory);

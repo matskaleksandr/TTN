@@ -7,6 +7,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System.IO;
+using System.Windows;
 
 namespace TTN
 {
@@ -28,6 +29,8 @@ namespace TTN
                     ctx.Contrast(1.3f);
                 });
                 image.Save(Path.Combine(outpath, $"doc1.png"));
+                MessageBox.Show("???");
+                MessageBox.Show(Path.Combine(outpath, $"doc1.png"));
                 //image.Save("M://doc1.png");
             }
         }
