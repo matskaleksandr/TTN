@@ -43,7 +43,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <!-- Стиль для закругленной кнопки с зелёным фоном -->
         <Style x:Key="RoundedButtonStyle" TargetType="Button">
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Padding" Value="10,5"/>
@@ -133,6 +132,108 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="ImageButtonStyle2" TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0">
+                            <Image Source="/Add_inverse_16x.png" Stretch="Fill"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Триггер для состояния нажатия -->
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <!-- Анимация при возвращении к нормальному состоянию -->
+                            <Trigger Property="IsPressed" Value="False">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)"
+                                                To="1.0" Duration="0:0:0.1"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)"
+                                                To="1.0" Duration="0:0:0.1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ImageButtonStyle3" TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0">
+                            <Image Source="/ZoomOut_16xMD.png" Stretch="Fill"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Триггер для состояния нажатия -->
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <!-- Анимация при возвращении к нормальному состоянию -->
+                            <Trigger Property="IsPressed" Value="False">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)"
+                                         To="1.0" Duration="0:0:0.1"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)"
+                                         To="1.0" Duration="0:0:0.1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ImageButtonStyle4" TargetType="Button">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0">
+                            <Image Source="/ZoomIn_16x.png" Stretch="Fill"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Триггер для состояния нажатия -->
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <!-- Анимация при возвращении к нормальному состоянию -->
+                            <Trigger Property="IsPressed" Value="False">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)"
+                                         To="1.0" Duration="0:0:0.1"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)"
+                                         To="1.0" Duration="0:0:0.1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
 
@@ -167,9 +268,11 @@
             </MenuItem>
         </Menu>
 
-        <Image x:Name="imgBox" Margin="6,30,1,23" OpacityMask="Red"/>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,25,0,0">
+            <Image x:Name="imgBox" Margin="6,30,1,23" OpacityMask="Red" Width="600" Height="820"/>
+        </ScrollViewer>
 
-        <ProgressBar Grid.Row="2" Grid.ColumnSpan="5" Margin="64,29,64,46" Value="50"/>
+            <ProgressBar Grid.Row="2" Grid.ColumnSpan="5" Margin="64,29,64,46" Value="50"/>
 
         <Viewbox x:Name="viewbox1">
             <Label Content="Добавьте изображение накладной" 
@@ -180,7 +283,16 @@
                    VerticalContentAlignment="Center" Width="546"
                    MouseDoubleClick="Label_MouseDoubleClick"    />
         </Viewbox>
-
+        <Button BorderBrush="{x:Null}" HorizontalAlignment="Right" Width="50" Height="50" VerticalAlignment="Bottom" Style="{StaticResource ImageButtonStyle4}" Click="ZoomPanel" Margin="0,0,50,0">
+            <Button.Background>
+                <ImageBrush ImageSource="/ZoomIn_16x.png"/>
+            </Button.Background>
+        </Button>
+        <Button BorderBrush="{x:Null}" HorizontalAlignment="Right" Width="50" Height="50" VerticalAlignment="Bottom" Style="{StaticResource ImageButtonStyle3}" Click="ZoomMPanel" RenderTransformOrigin="0.54,0.53">
+            <Button.Background>
+                <ImageBrush ImageSource="/ZoomOut_16x.png"/>
+            </Button.Background>
+        </Button>
 
         <Grid Grid.Column="2" Margin="0,25,0,0">
             <Grid.RowDefinitions>
@@ -191,27 +303,35 @@
 
             <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Background="#FF1F6F20" />
 
+            <Grid Height="120" x:Name="dataPrefab" Visibility="Hidden">
+                <Border CornerRadius="15" BorderThickness="1" BorderBrush="Black" Background="#FFBCF5A8" RenderTransformOrigin="0.5,0.5" Margin="44,0,44,0" Height="104" VerticalAlignment="Center">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="31*"/>
+                            <RowDefinition Height="71*"/>
+                        </Grid.RowDefinitions>
+                        <TextBox Margin="21,25,21,17" TextWrapping="Wrap" Text="TextBox" Grid.Row="1"/>
+                        <ComboBox x:Name="comboBoxDataTypes" Margin="22,16,0,57" Grid.RowSpan="2" HorizontalAlignment="Left" Width="317"/>
+                        <Button Margin="0,0,22,57" BorderBrush="{x:Null}" HorizontalAlignment="Right" Width="29" Height="29" VerticalAlignment="Bottom" Grid.RowSpan="2" Style="{StaticResource ImageButtonStyle}" Click="DeleteButton_Click">
+                            <Button.Background>
+                                <ImageBrush x:Name="brush" ImageSource="/Close_red_16x.png"/>
+                            </Button.Background>
+                        </Button>
+                    </Grid>
+                </Border>
+            </Grid>
+
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <StackPanel Grid.Row="0" Margin="0,0,0,2" x:Name="MainStackPanel" Orientation="Vertical">
-                    <Grid Height="120" x:Name="dataPrefab">
-                        <Border CornerRadius="15" BorderThickness="1" BorderBrush="Black" Background="#FFBCF5A8" RenderTransformOrigin="0.5,0.5" Margin="44,0,44,0" Height="104" VerticalAlignment="Center">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="31*"/>
-                                    <RowDefinition Height="71*"/>
-                                </Grid.RowDefinitions>
-                                <TextBox Margin="21,25,21,17" TextWrapping="Wrap" Text="TextBox" Grid.Row="1"/>
-                                <ComboBox x:Name="comboBoxDataTypes" Margin="22,16,0,57" Grid.RowSpan="2" HorizontalAlignment="Left" Width="317"/>
-                                <Button Margin="0,0,22,57" BorderBrush="{x:Null}" HorizontalAlignment="Right" Width="29" Height="29" VerticalAlignment="Bottom" Grid.RowSpan="2" Style="{StaticResource ImageButtonStyle}" >
-                                    <Button.Background>
-                                        <ImageBrush x:Name="brush" ImageSource="/Close_red_16x.png"/>
-                                    </Button.Background>
-                                </Button>
-                            </Grid>
-                        </Border>
-                    </Grid>
+                    
                 </StackPanel>
             </ScrollViewer>
+
+            <Button BorderBrush="{x:Null}" HorizontalAlignment="Right" Width="50" Height="50" VerticalAlignment="Bottom" Style="{StaticResource ImageButtonStyle2}" Click="AddDataPanel">
+                <Button.Background>
+                    <ImageBrush ImageSource="/Add_inverse_16x.png"/>
+                </Button.Background>
+            </Button>
 
             <StackPanel Grid.Row="2">
                 <CheckBox x:Name="razdelChekPrefab" 
@@ -219,6 +339,7 @@
                     FontSize="20"
                     Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
             </StackPanel>
+            
         </Grid>
 
 

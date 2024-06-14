@@ -224,8 +224,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="ZoomOut_16x.png" />
+    <Resource Include="ZoomOut_16xMD.png" />
+    <Resource Include="ZoomIn_16x.png" />
+    <Resource Include="ZoomIn_16x_32.bmp" />
     <Resource Include="Close_red_16x.png" />
     <Resource Include="Close_16x.png" />
+    <Resource Include="Add_inverse_16x.png" />
     <Content Include="icudt.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

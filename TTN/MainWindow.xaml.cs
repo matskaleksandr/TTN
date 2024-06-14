@@ -46,6 +46,10 @@ namespace TTN
             "ВсегоСуммаНДС",
             "ВсегоCтоимостьCНДС",
             "ОтпускРазрешил",
+            "СдалГрузоотправитель",
+            "ТоварКДоставкеПринял",
+            "ПоДоверенности(#)",
+            "ДоверенностьВыдана",
         };
         public List<Grid> grid = new List<Grid>();
 
@@ -60,13 +64,15 @@ namespace TTN
             string exePath = AppDomain.CurrentDomain.BaseDirectory;
             excelFilePath = System.IO.Path.Combine(exePath, excelFilePath);
             comboBoxDataTypes.ItemsSource = typesData;
-            grid.Add(dataPrefab);
+            //grid.Add(dataPrefab);
             imgDelete = brush;
         }
         private void AddData(int type, string data)
         {
             Grid clonedGrid = CreateDuplicatedGrid(type, data);
             MainStackPanel.Children.Add(clonedGrid);
+            grid.Add(clonedGrid);
+            clonedGrid.Visibility = Visibility.Visible;
         }
 
 
@@ -326,9 +332,14 @@ namespace TTN
             bool boolVsegoSummaNDS = false;
             bool boolVsegoStoimostSNDS = false;
             bool boolOtpuskRazreshil = false;
+            bool boolSdalGruzootpravit = false;
+            bool boolTovarKDostavkePrin = false;
+            bool boolPoDoverenn = false;
+            bool boolDoverennVidana = false;
 
             for (int i = 0; i < listOfRows.Count; i++)
             {
+
                 for (int j = 0; j < listOfRows[i].Count; j++)
                 {
                     string currentWord = listOfRows[i][j];
@@ -444,6 +455,54 @@ namespace TTN
                             boolOtpuskRazreshil = true;
                         }
                     }
+                    if (boolSdalGruzootpravit == false)
+                    {
+                        string text = string.Join("", listOfRows[i]);
+                        if (text.IndexOf("Сдал", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("Грузоотправитель", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            AddData(10, RemoveFirstWord(text, 2));
+                            boolSdalGruzootpravit = true;
+                        }
+                    }
+                    if (boolTovarKDostavkePrin == false)
+                    {
+                        string text = string.Join("", listOfRows[i]);
+                        if (text.IndexOf("Товар", StringComparison.OrdinalIgnoreCase) >= 0 
+                            && text.IndexOf("к", StringComparison.OrdinalIgnoreCase) >= 0 
+                            && text.IndexOf("доставке", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            AddData(11, RemoveFirstWord(text, 4));
+                            boolTovarKDostavkePrin = true;
+                        }
+                    }
+
+                    if (boolPoDoverenn == false)
+                    {
+                        string text = string.Join("", listOfRows[i]);
+                        var data = ExtractData(text);
+                        if (data.powerOfAttorney != null)
+                        {
+                            if (data.powerOfAttorney.Length != 0) 
+                            { 
+                                AddData(12, data.powerOfAttorney);
+                                boolPoDoverenn = true;
+                            }
+                        }
+                    }
+                    if (boolDoverennVidana == false)
+                    {
+                        string text = string.Join("", listOfRows[i]);
+                        var data = ExtractData(text);
+                        if (data.issuedBy != null)
+                        {
+                            if (data.issuedBy.Length != 0)
+                            {
+                                AddData(13, data.issuedBy);
+                                boolDoverennVidana = true;
+                            }
+                        }
+                    }
+
                 }
             }
             using (StreamWriter writer = new StreamWriter("M://info.txt", false, Encoding.UTF8))
@@ -454,6 +513,34 @@ namespace TTN
                     writer.WriteLine(line);
                 }
             }
+        }
+        public (string powerOfAttorney, string issuedBy) ExtractData(string input)
+        {
+            string powerOfAttorney = null;
+            string issuedBy = null;
+            string pattern1 = @"по доверенности\s*(?<powerOfAttorney>[^выданной]*)\s*выданной\s*(?<issuedBy>.*)";
+            string pattern2 = @"по доверенности\s*(?<powerOfAttorney>.*)";
+            string pattern3 = @"выданной\s*(?<issuedBy>.*)";
+            var match = Regex.Match(input, pattern1);
+            if (match.Success)
+            {
+                powerOfAttorney = match.Groups["powerOfAttorney"].Value.Trim();
+                issuedBy = match.Groups["issuedBy"].Value.Trim();
+            }
+            else
+            {
+                match = Regex.Match(input, pattern2);
+                if (match.Success)
+                {
+                    powerOfAttorney = match.Groups["powerOfAttorney"].Value.Trim();
+                }
+                match = Regex.Match(input, pattern3);
+                if (match.Success)
+                {
+                    issuedBy = match.Groups["issuedBy"].Value.Trim();
+                }
+            }
+            return (powerOfAttorney, issuedBy);
         }
         public string RemoveFirstWord(string input, int n = 1)
         {
@@ -470,24 +557,42 @@ namespace TTN
             {
                 i += textList[j].Length + 1;
             }
-
-
-
-
-
-
-
-
-            //if (string.IsNullOrWhiteSpace(input))
-            //{
-            //    return input;
-            //}
-            //int firstSpaceIndex = input.IndexOf(' ');
-            //if (firstSpaceIndex == -1)
-            //{
-            //    return "";
-            //}
             return input.Substring(i).TrimStart();
+        }
+        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            if (button != null)
+            {
+                var grid_ = FindParent<Grid>(button);
+                if (grid_ != null)
+                {
+                    var stackPanel = MainStackPanel;
+                    if (stackPanel != null)
+                    {                        
+                        stackPanel.Children.Remove(grid_);
+                        grid.Remove(grid_);
+                    }
+                }
+            }
+        }
+        private T FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            DependencyObject parentObject = VisualTreeHelper.GetParent(child);
+            DependencyObject parentObject1 = VisualTreeHelper.GetParent(parentObject);
+            DependencyObject parentObject2 = VisualTreeHelper.GetParent(parentObject1);
+
+            if (parentObject2 == null) return null;
+
+            T parent = parentObject2 as T;
+            if (parent != null)
+            {
+                return parent;
+            }
+            else
+            {
+                return FindParent<T>(parentObject2);
+            }
         }
         private void DebugTesseractZone(string currentWord, Bitmap originalImage, Tesseract.Rect bounds, Bitmap copiedImage)
         {
@@ -584,6 +689,7 @@ namespace TTN
             button.Height = 29;
             button.Background = imgDelete;
             button.Style = FindResource("ImageButtonStyle") as Style;
+            button.Click += DeleteButton_Click;
             innerGrid.Children.Add(textBox);
             innerGrid.Children.Add(comboBox);
             innerGrid.Children.Add(button);
@@ -594,6 +700,45 @@ namespace TTN
         private void Label_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             OpenFileButton_Click(sender, e);
+        }
+        private void AddDataPanel(object sender, RoutedEventArgs e)
+        {
+            AddData(0, "");
+        }
+        int nZoom = 0;
+        int[] wZoom = new int[16];
+        int[] hZoom = new int[16];
+        private void ZoomPanel(object sender, RoutedEventArgs e)
+        {
+            if(nZoom == 0)
+            {
+                double width = imgBox.Width;
+                double height = imgBox.Height;
+                wZoom = new int[16];
+                hZoom = new int[16];
+                wZoom[0] = (int)imgBox.Width;
+                hZoom[0] = (int)imgBox.Height;
+                for (int i = 1; i < 16; i++)
+                {
+                    wZoom[i] = wZoom[i - 1] + Convert.ToInt32((float)(wZoom[i - 1] / 100) * 15);
+                    hZoom[i] = hZoom[i - 1] + Convert.ToInt32((float)(hZoom[i - 1] / 100) * 15);
+                }
+            }
+            if (nZoom < 15)
+            {
+                nZoom++;
+                imgBox.Width = wZoom[nZoom];
+                imgBox.Height = hZoom[nZoom];                
+            }
+        }
+        private void ZoomMPanel(object sender, RoutedEventArgs e)
+        {
+            if (nZoom >= 0)
+            {
+                nZoom--;
+                imgBox.Width = wZoom[nZoom];
+                imgBox.Height = hZoom[nZoom];
+            }
         }
     }
 }
