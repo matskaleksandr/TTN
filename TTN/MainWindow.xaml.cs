@@ -50,9 +50,10 @@ namespace TTN
             "ТоварКДоставкеПринял",
             "ПоДоверенности(#)",
             "ДоверенностьВыдана",
+            "1ТОВАРНЫЙРАЗДЕЛ",
         };
         public List<Grid> grid = new List<Grid>();
-
+        Table tb = null;
 
 
 
@@ -64,7 +65,6 @@ namespace TTN
             string exePath = AppDomain.CurrentDomain.BaseDirectory;
             excelFilePath = System.IO.Path.Combine(exePath, excelFilePath);
             comboBoxDataTypes.ItemsSource = typesData;
-            //grid.Add(dataPrefab);
             imgDelete = brush;
         }
         private void AddData(int type, string data)
@@ -336,6 +336,7 @@ namespace TTN
             bool boolTovarKDostavkePrin = false;
             bool boolPoDoverenn = false;
             bool boolDoverennVidana = false;
+            bool boolTOVARNRAZDEL = false;
 
             for (int i = 0; i < listOfRows.Count; i++)
             {
@@ -475,7 +476,6 @@ namespace TTN
                             boolTovarKDostavkePrin = true;
                         }
                     }
-
                     if (boolPoDoverenn == false)
                     {
                         string text = string.Join("", listOfRows[i]);
@@ -502,7 +502,16 @@ namespace TTN
                             }
                         }
                     }
-
+                    if (boolTOVARNRAZDEL == false)
+                    {
+                        string text = string.Join("", listOfRows[i]);
+                        if (text.IndexOf("ТОВАРНЫЙ", StringComparison.OrdinalIgnoreCase) >= 0
+                            && text.IndexOf("РАЗДЕЛ", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            AddData(14, null);
+                            boolTOVARNRAZDEL = true;
+                        }
+                    }
                 }
             }
             using (StreamWriter writer = new StreamWriter("M://info.txt", false, Encoding.UTF8))
@@ -672,6 +681,14 @@ namespace TTN
             textBox.Text = data;
             textBox.Margin = new Thickness(21, 25, 21, 17);
             textBox.TextWrapping = TextWrapping.Wrap;
+            if (type == 14)
+            {
+                textBox.Visibility = Visibility.Hidden;
+            }
+            else
+            {
+                textBox.Visibility = Visibility.Visible;
+            }
             Grid.SetRow(textBox, 1);
             ComboBox comboBox = new ComboBox();
             comboBox.Name = "comboBoxDataTypes";
@@ -681,6 +698,7 @@ namespace TTN
             comboBox.Width = 317;
             comboBox.ItemsSource = typesData;
             comboBox.SelectedIndex = type;
+            comboBox.SelectionChanged += comboBoxDataTypes_SelectionChanged;
             Button button = new Button();
             button.HorizontalAlignment = System.Windows.HorizontalAlignment.Right;
             button.VerticalAlignment = System.Windows.VerticalAlignment.Bottom;
@@ -690,9 +708,28 @@ namespace TTN
             button.Background = imgDelete;
             button.Style = FindResource("ImageButtonStyle") as Style;
             button.Click += DeleteButton_Click;
+            Button button2 = new Button();
+            button2.Name = "buttonTable";
+            button2.Content = "Просмотреть таблицу";
+            if(type == 14)
+            {
+                button2.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                button2.Visibility = Visibility.Hidden;
+            }
+            button2.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
+            button2.VerticalAlignment = System.Windows.VerticalAlignment.Top;
+            button2.Margin = new Thickness(21, 25, 0, 0);
+            button2.Width = 317;
+            button2.Height = 29;
+            button2.Click += buttonTable_Click;
+            Grid.SetRow(button2, 1);
             innerGrid.Children.Add(textBox);
             innerGrid.Children.Add(comboBox);
             innerGrid.Children.Add(button);
+            innerGrid.Children.Add(button2);
             border.Child = innerGrid;
             grid.Children.Add(border);
             return grid;
@@ -739,6 +776,86 @@ namespace TTN
                 imgBox.Width = wZoom[nZoom];
                 imgBox.Height = hZoom[nZoom];
             }
+        }
+        private void comboBoxDataTypes_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ComboBox comboBox = sender as ComboBox;
+            Border parentBorder = FindParent2<Border>(comboBox);
+            if (parentBorder == null) return;
+            Button viewTableButton = FindChild<Button>(parentBorder, "buttonTable");
+            TextBox textBox = FindChild<TextBox>(parentBorder, null);
+
+            if (comboBox.SelectedIndex == 14)
+            {
+                viewTableButton.Visibility = Visibility.Visible;
+                textBox.Visibility = Visibility.Hidden;
+            }
+            else
+            {
+                viewTableButton.Visibility = Visibility.Hidden;
+                textBox.Visibility = Visibility.Visible;
+            }
+        }
+        private T FindChild<T>(DependencyObject parent, string childName) where T : DependencyObject
+        {
+            if (parent == null) return null;
+            T foundChild = null;
+
+            int childrenCount = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < childrenCount; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                T childType = child as T;
+                if (childType == null)
+                {
+                    foundChild = FindChild<T>(child, childName);
+                    if (foundChild != null) break;
+                }
+                else if (!string.IsNullOrEmpty(childName))
+                {
+                    var frameworkElement = child as FrameworkElement;
+                    if (frameworkElement != null && frameworkElement.Name == childName)
+                    {
+                        foundChild = (T)child;
+                        break;
+                    }
+                }
+                else
+                {
+                    foundChild = (T)child;
+                    break;
+                }
+            }
+
+            return foundChild;
+        }
+        private T FindParent2<T>(DependencyObject child) where T : DependencyObject
+        {
+            DependencyObject parentObject = VisualTreeHelper.GetParent(child);
+            if (parentObject == null) return null;
+
+            T parent = parentObject as T;
+            if (parent != null)
+            {
+                return parent;
+            }
+            else
+            {
+                return FindParent2<T>(parentObject);
+            }
+        }
+        private void buttonTable_Click(object sender, RoutedEventArgs e)
+        {
+            if(tb == null)
+            {
+                tb = new Table();
+                tb.Closed += Tb_Closed;
+                tb.Show();
+            }
+        }
+        private void Tb_Closed(object sender, EventArgs e)
+        {
+            tb = null;
         }
     }
 }

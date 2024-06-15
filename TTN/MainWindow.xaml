@@ -272,7 +272,7 @@
             <Image x:Name="imgBox" Margin="6,30,1,23" OpacityMask="Red" Width="600" Height="820"/>
         </ScrollViewer>
 
-            <ProgressBar Grid.Row="2" Grid.ColumnSpan="5" Margin="64,29,64,46" Value="50"/>
+        <ProgressBar Grid.Row="2" Grid.ColumnSpan="5" Margin="64,29,64,46" Value="50"/>
 
         <Viewbox x:Name="viewbox1">
             <Label Content="Добавьте изображение накладной" 
@@ -303,6 +303,12 @@
 
             <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Background="#FF1F6F20" />
 
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <StackPanel Grid.Row="0" Margin="0,0,0,2" x:Name="MainStackPanel" Orientation="Vertical">
+
+                </StackPanel>
+            </ScrollViewer>
+
             <Grid Height="120" x:Name="dataPrefab" Visibility="Hidden">
                 <Border CornerRadius="15" BorderThickness="1" BorderBrush="Black" Background="#FFBCF5A8" RenderTransformOrigin="0.5,0.5" Margin="44,0,44,0" Height="104" VerticalAlignment="Center">
                     <Grid>
@@ -311,21 +317,18 @@
                             <RowDefinition Height="71*"/>
                         </Grid.RowDefinitions>
                         <TextBox Margin="21,25,21,17" TextWrapping="Wrap" Text="TextBox" Grid.Row="1"/>
-                        <ComboBox x:Name="comboBoxDataTypes" Margin="22,16,0,57" Grid.RowSpan="2" HorizontalAlignment="Left" Width="317"/>
+                        <ComboBox x:Name="comboBoxDataTypes" Margin="22,16,0,57" Grid.RowSpan="2" HorizontalAlignment="Left" Width="317" SelectionChanged="comboBoxDataTypes_SelectionChanged"/>
                         <Button Margin="0,0,22,57" BorderBrush="{x:Null}" HorizontalAlignment="Right" Width="29" Height="29" VerticalAlignment="Bottom" Grid.RowSpan="2" Style="{StaticResource ImageButtonStyle}" Click="DeleteButton_Click">
                             <Button.Background>
                                 <ImageBrush x:Name="brush" ImageSource="/Close_red_16x.png"/>
                             </Button.Background>
                         </Button>
+                        <Button x:Name="buttonTable" Click="buttonTable_Click"  Content="Просмотреть таблицу" Visibility="Hidden" Margin="21,25,0,0" Grid.Row="1" Height="29" VerticalAlignment="Top" HorizontalAlignment="Left" Width="317"/>
                     </Grid>
                 </Border>
             </Grid>
 
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                <StackPanel Grid.Row="0" Margin="0,0,0,2" x:Name="MainStackPanel" Orientation="Vertical">
-                    
-                </StackPanel>
-            </ScrollViewer>
+            
 
             <Button BorderBrush="{x:Null}" HorizontalAlignment="Right" Width="50" Height="50" VerticalAlignment="Bottom" Style="{StaticResource ImageButtonStyle2}" Click="AddDataPanel">
                 <Button.Background>
@@ -339,7 +342,7 @@
                     FontSize="20"
                     Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
             </StackPanel>
-            
+
         </Grid>
 
 
