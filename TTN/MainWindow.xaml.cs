@@ -24,6 +24,10 @@ using DuoVia.FuzzyStrings;
 using System.Text.RegularExpressions;
 using System.Windows.Markup;
 using Aspose.Pdf;
+using System.Windows.Media.TextFormatting;
+using System.Reflection.Emit;
+using Aspose.Pdf.Vector;
+using static TTN.Table;
 
 namespace TTN
 {
@@ -54,6 +58,7 @@ namespace TTN
         };
         public List<Grid> grid = new List<Grid>();
         Table tb = null;
+        List<DataRazdel1> items = new List<DataRazdel1>();
 
 
 
@@ -232,6 +237,105 @@ namespace TTN
                 menuButtonScan.IsEnabled = true;
             }
         }
+        List<Tuple<int, int, int, int>> lineCoordinates = new List<Tuple<int, int, int, int>>();
+        List<Tables> tables = new List<Tables>();
+        private void DetermineEdgeType(List<Tuple<int, int, int, int>> lines)
+        {
+            List<Tuple<int, int, int, int>> horizontalLines = new List<Tuple<int, int, int, int>>();
+            List<Tuple<int, int, int, int>> verticalLines = new List<Tuple<int, int, int, int>>();
+
+            foreach (var line in lines)
+            {
+                int B1 = line.Item3 - line.Item1; //разница по X
+                int B2 = line.Item4 - line.Item2; //разница по Y
+                if (B1 > B2)
+                {
+                    int B3 = (line.Item2 + line.Item4) / 2;
+                    horizontalLines.Add(Tuple.Create(line.Item1, B3, line.Item3, B3));
+                }
+                else
+                {
+                    int B3 = (line.Item1 + line.Item3) / 2;
+                    if (line.Item3 - line.Item1 <= 50)
+                    {
+                        verticalLines.Add(Tuple.Create(B3, line.Item2, B3, line.Item4));
+                    }
+                }
+            }
+            foreach (var lineH in horizontalLines)
+            {
+                foreach (var lineV in verticalLines)
+                {
+                    if (Math.Abs(lineH.Item1 - lineV.Item1) < 100)
+                    {
+                        if (Math.Abs(lineH.Item2 - lineV.Item2) < 100)
+                        {
+                            Tables table = new Tables(); //новая таблица
+                            table.KORDx.Add(lineH.Item1);
+                            table.KORDy.Add(lineV.Item2);
+
+                            foreach (var lineH2 in horizontalLines)
+                            {
+                                if ((lineH2.Item2 >= lineV.Item2 && lineH2.Item2 <= lineV.Item4) && lineH != lineH2)
+                                {
+                                    if (Math.Abs(lineH2.Item1 - lineV.Item1) < 50)
+                                    {
+                                        table.KORDy.Add(lineH2.Item2);
+                                        table.KORDy.Sort();
+                                    }
+                                }
+                            }
+                            tables.Add(table);
+                        }
+                    }
+                    else if ((lineV.Item1 - 20 >= lineH.Item1 && lineV.Item1 <= lineH.Item3 + 20) && tables.Count != 0) // XV находится между X12H
+                    {
+                        bool r = false;
+                        if (Math.Abs(tables[tables.Count - 1].KORDy[0] - lineV.Item2) < 100)
+                        {
+                            tables[tables.Count - 1].KORDx.Add(lineV.Item1);
+                            tables[tables.Count - 1].KORDx.Sort();
+                            r = true;
+                        }
+                        if (Math.Abs(lineH.Item3 - lineV.Item1) < 50)
+                        {
+                            if (Math.Abs(tables[tables.Count - 1].KORDy[0] - lineV.Item2) < 200 && r == false)
+                            {
+                                tables[tables.Count - 1].KORDx.Add(lineV.Item1);
+                                tables[tables.Count - 1].KORDx.Sort();
+                            }
+                        }
+                    }
+                }
+            }
+            foreach (var table in tables)
+            {
+                int z = 0;
+                for (int i = 0; i < table.KORDx.Count; i++)
+                {
+                    if (table.KORDx[i] != z)
+                    {
+                        z = table.KORDx[i];
+                    }
+                    else
+                    {
+                        table.KORDx.Remove(z);
+                    }
+                }
+                int u = 0;
+                for (int i = 0; i < table.KORDy.Count; i++)
+                {
+                    if (table.KORDy[i] != u)
+                    {
+                        u = table.KORDy[i];
+                    }
+                    else
+                    {
+                        table.KORDy.Remove(u);
+                    }
+                }
+            }
+        }//обработка таблиц
         public void Scan(object sender, RoutedEventArgs e)
         {
             string outputDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "ConvertedImages");
@@ -243,6 +347,8 @@ namespace TTN
 
             List<string> rows = new List<string>();
             List<List<string>> listOfRows = new List<List<string>>();
+
+            bool tablecheck = false;
 
             using (var engine = new TesseractEngine(@"D:\Programm\editor\Tesseract-OCR\tessdata", "eng+rus", EngineMode.Default))
             {
@@ -279,7 +385,19 @@ namespace TTN
                                 {
                                     string currentWord = iterator.GetText(PageIteratorLevel.Word);
                                     iterator.TryGetBoundingBox(PageIteratorLevel.Word, out Tesseract.Rect bounds);
-
+                                    string text = string.Join("", rows);
+                                    if (text.IndexOf("ТОВАРНЫЙ", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("РАЗДЕЛ", StringComparison.OrdinalIgnoreCase) >= 0)
+                                    {
+                                        tablecheck = true;
+                                    }
+                                    if (tablecheck == true)
+                                    {
+                                        ScanTable(currentWord, bounds);
+                                    }
+                                    if (currentWord == "|")
+                                    {
+                                        currentWord = null;
+                                    }
                                     if (bounds.X1 < MaxX)
                                     {
                                         MaxX = bounds.X1;
@@ -298,7 +416,6 @@ namespace TTN
                                         MaxY = (float)((bounds.Y1 + bounds.Y2) / 2);
                                     }
                                     rows.Add(" " + currentWord);
-                                    //MessageBox.Show(listOfRows.Count.ToString() + "\n" + rows.Count.ToString() + "\n" + nRow);
                                     if (listOfRows.Count != nRow)
                                     {
                                         listOfRows.Add(rows);
@@ -337,6 +454,42 @@ namespace TTN
             bool boolPoDoverenn = false;
             bool boolDoverennVidana = false;
             bool boolTOVARNRAZDEL = false;
+
+            DetermineEdgeType(lineCoordinates);
+            MessageBox.Show(tables.Count.ToString());
+            Bitmap originalImage2 = new Bitmap(Path.Combine(outputDirectory, $"doc1.png"));
+            Bitmap copiedImage2 = new Bitmap(originalImage2.Width, originalImage2.Height);
+
+            foreach (var table in tables)
+            {
+                for (int i = table.KORDx[0]; i < table.KORDx[table.KORDx.Count - 1]; i++)
+                {
+                    foreach (var y in table.KORDy)
+                    {
+                        copiedImage2.SetPixel(i, y, System.Drawing.Color.Yellow);
+                    }
+                }
+                for (int i = table.KORDy[0]; i < table.KORDy[table.KORDy.Count - 1]; i++)
+                {
+                    foreach (var x in table.KORDx)
+                    {
+                        copiedImage2.SetPixel(x, i, System.Drawing.Color.Yellow);
+                    }
+                }
+            }
+            foreach (var table in tables)
+            {
+                foreach (var x in table.KORDx)
+                {
+                    foreach (var y in table.KORDy)
+                    {
+                        copiedImage2.SetPixel(x, y, System.Drawing.Color.White);
+                    }
+                }
+            }
+            copiedImage2.Save(Path.Combine(outputDirectory, $"doc3.png"));
+            originalImage2.Dispose();
+            copiedImage2.Dispose();
 
             for (int i = 0; i < listOfRows.Count; i++)
             {
@@ -399,7 +552,7 @@ namespace TTN
                         }
                         if (currentWord.IndexOf("Грузоотправитель", StringComparison.OrdinalIgnoreCase) >= 0 && textList.Count > 4)
                         {
-                            AddData(4, RemoveFirstWord(text,1));
+                            AddData(4, RemoveFirstWord(text, 1));
                             boolGruzootpav = true;
                         }
                     }
@@ -468,8 +621,8 @@ namespace TTN
                     if (boolTovarKDostavkePrin == false)
                     {
                         string text = string.Join("", listOfRows[i]);
-                        if (text.IndexOf("Товар", StringComparison.OrdinalIgnoreCase) >= 0 
-                            && text.IndexOf("к", StringComparison.OrdinalIgnoreCase) >= 0 
+                        if (text.IndexOf("Товар", StringComparison.OrdinalIgnoreCase) >= 0
+                            && text.IndexOf("к", StringComparison.OrdinalIgnoreCase) >= 0
                             && text.IndexOf("доставке", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
                             AddData(11, RemoveFirstWord(text, 4));
@@ -482,8 +635,8 @@ namespace TTN
                         var data = ExtractData(text);
                         if (data.powerOfAttorney != null)
                         {
-                            if (data.powerOfAttorney.Length != 0) 
-                            { 
+                            if (data.powerOfAttorney.Length != 0)
+                            {
                                 AddData(12, data.powerOfAttorney);
                                 boolPoDoverenn = true;
                             }
@@ -505,15 +658,160 @@ namespace TTN
                     if (boolTOVARNRAZDEL == false)
                     {
                         string text = string.Join("", listOfRows[i]);
-                        if (text.IndexOf("ТОВАРНЫЙ", StringComparison.OrdinalIgnoreCase) >= 0
-                            && text.IndexOf("РАЗДЕЛ", StringComparison.OrdinalIgnoreCase) >= 0)
+                        if (text.IndexOf("ТОВАРНЫЙ", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("РАЗДЕЛ", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
+                            MessageBox.Show("!!!");
                             AddData(14, null);
+                            if (tables[0] != null)
+                            {
+                                bool p = false;
+                                for (int l = 0; l < tables[0].KORDy.Count - 1; l++)
+                                {
+                                    System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[0], tables[0].KORDy[l]); // Верхний левый угол
+                                    System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[1], tables[0].KORDy[l + 1]); // Нижний правый угол
+
+                                    using (Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png")))
+                                    {
+                                        System.Drawing.Rectangle cropArea = GetCropArea(topLeft, bottomRight);
+                                        using (Bitmap croppedImage = CropImage(originalImage, cropArea))
+                                        {
+                                            string tx = ExtractTextFromImage(croppedImage);
+                                            if (tx.IndexOf("№", StringComparison.OrdinalIgnoreCase) >= 0 || (tx.IndexOf("N", StringComparison.OrdinalIgnoreCase) >= 0))
+                                            {
+                                                p = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }//проверка первого столбца
+                                if(p == false)
+                                {
+                                    for (int l = 2; l < tables[0].KORDy.Count - 1; l++)
+                                    {
+                                        DataRazdel1 razd = new DataRazdel1();
+                                        string tx = null;
+                                        for (int n = 0; n < tables[0].KORDx.Count - 1; n++)
+                                        {
+                                            System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[n]+2, tables[0].KORDy[l]+2); // Верхний левый угол
+                                            System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[n+1]-2, tables[0].KORDy[l + 1]-2); // Нижний правый угол
+
+                                            if(tables[0].KORDx[n] == tables[0].KORDx[n + 1])
+                                            {
+                                                tables[0].KORDx.Remove(tables[0].KORDx[n]);
+                                                n--;
+                                                continue;
+                                            }
+
+                                            using (Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png")))
+                                            {
+                                                System.Drawing.Rectangle cropArea = GetCropArea(topLeft, bottomRight);
+                                                using (Bitmap croppedImage = CropImage(originalImage, cropArea))
+                                                {
+                                                    tx = ExtractTextFromImage(croppedImage);
+                                                    tx = CleanString(tx);
+                                                    switch (n)
+                                                    {
+                                                        case 0:
+                                                            razd.НаименованиеТовара = tx;
+                                                            break;
+                                                        case 1:
+                                                            razd.ЕдиницаИзмерения = tx;
+                                                            break;
+                                                        case 2:
+                                                            razd.Количество = tx;
+                                                            break;
+                                                        case 3:
+                                                            razd.Цена = tx;
+                                                            break;
+                                                        case 4:
+                                                            razd.Стоимость = tx;
+                                                            break;
+                                                        case 5:
+                                                            razd.СтавкаНДС = tx;
+                                                            break;
+                                                        case 6:
+                                                            razd.СуммаНДС = tx;
+                                                            break;
+                                                        case 7:
+                                                            razd.СтоимостьСНДС = tx;
+                                                            break;
+                                                        case 8:
+                                                            razd.Примечание = tx;
+                                                            break;
+                                                    }                                                    
+                                                }
+                                            }
+                                        }
+                                        items.Add(razd);
+                                    }
+                                }
+                                else
+                                {
+                                    for (int l = 2; l < tables[0].KORDy.Count - 1; l++)
+                                    {
+                                        DataRazdel1 razd = new DataRazdel1();
+                                        string tx = null;
+                                        for (int n = 1; n < tables[0].KORDx.Count - 1; n++)
+                                        {
+                                            System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[n] + 2, tables[0].KORDy[l] + 2); // Верхний левый угол
+                                            System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[n + 1] - 2, tables[0].KORDy[l + 1] - 2); // Нижний правый угол
+                                            if (tables[0].KORDx[n] == tables[0].KORDx[n + 1])
+                                            {
+                                                tables[0].KORDx.Remove(tables[0].KORDx[n]);
+                                                n--;
+                                                continue;
+                                            }
+                                            using (Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png")))
+                                            {
+                                                System.Drawing.Rectangle cropArea = GetCropArea(topLeft, bottomRight);
+                                                using (Bitmap croppedImage = CropImage(originalImage, cropArea))
+                                                {
+                                                    tx = ExtractTextFromImage(croppedImage);
+                                                    tx = CleanString(tx);
+                                                    //MessageBox.Show(tx + "\n" + n);
+                                                    switch (n)
+                                                    {
+                                                        case 1:
+                                                            razd.НаименованиеТовара = tx;
+                                                            break;
+                                                        case 2:
+                                                            razd.ЕдиницаИзмерения = tx;
+                                                            break;
+                                                        case 3:
+                                                            razd.Количество = tx;
+                                                            break;
+                                                        case 4:
+                                                            razd.Цена = tx;
+                                                            break;
+                                                        case 5:
+                                                            razd.Стоимость = tx;
+                                                            break;
+                                                        case 6:
+                                                            razd.СтавкаНДС = tx;
+                                                            break;
+                                                        case 7:
+                                                            razd.СуммаНДС = tx;
+                                                            break;
+                                                        case 8:
+                                                            razd.СтоимостьСНДС = tx;
+                                                            break;
+                                                        case 9:
+                                                            razd.Примечание = tx;
+                                                            break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        items.Add(razd);
+                                    }
+                                }
+                            }
                             boolTOVARNRAZDEL = true;
-                        }
-                    }
+                        }                        
+                    }                    
                 }
             }
+
             using (StreamWriter writer = new StreamWriter("M://info.txt", false, Encoding.UTF8))
             {
                 foreach (var row in listOfRows)
@@ -521,6 +819,61 @@ namespace TTN
                     string line = string.Join("", row);
                     writer.WriteLine(line);
                 }
+            }
+        }
+        public static string CleanString(string input)
+        {
+            // Удаляем указанные символы, включая переносы строк
+            string cleanedString = input.Replace("\n", "")
+                                        .Replace("\r", "")
+                                        .Replace("|", "")
+                                        .Replace("\\", "")
+                                        .Replace("/", "");
+
+            // Заменяем более одного пробела на один
+            cleanedString = Regex.Replace(cleanedString, @"\s+", " ");
+
+            // Убираем пробелы в начале и конце строки
+            cleanedString = cleanedString.Trim();
+
+            return cleanedString;
+        }
+        static System.Drawing.Rectangle GetCropArea(System.Drawing.Point topLeft, System.Drawing.Point bottomRight)
+        {
+            int width = bottomRight.X - topLeft.X;
+            int height = bottomRight.Y - topLeft.Y;
+            //MessageBox.Show(bottomRight.X.ToString() + "\n" + topLeft.X.ToString() + "\n" + bottomRight.Y.ToString() + "\n" + topLeft.Y.ToString());
+            return new System.Drawing.Rectangle(topLeft.X, topLeft.Y, width, height);
+        }
+        static string ExtractTextFromImage(Bitmap image)
+        {
+            using (var engine = new TesseractEngine(@"D:\Programm\editor\Tesseract-OCR\tessdata", "eng+rus", EngineMode.Default))
+            {
+                using (var img = PixConverter.ToPix(image))
+                {
+                    using (var page = engine.Process(img))
+                    {
+                        return page.GetText();
+                    }
+                }
+            }
+        }
+        static Bitmap CropImage(Bitmap original, System.Drawing.Rectangle cropArea)
+        {
+            Bitmap croppedImage = new Bitmap(cropArea.Width, cropArea.Height);
+            using (Graphics g = Graphics.FromImage(croppedImage))
+            {
+                g.DrawImage(original, new System.Drawing.Rectangle(0, 0, croppedImage.Width, croppedImage.Height), cropArea, GraphicsUnit.Pixel);
+            }
+            string outputDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "ConvertedImages");
+            croppedImage.Save(Path.Combine(outputDirectory, $"doc{cropArea.X}_{cropArea.Y}.png"));
+            return croppedImage;
+        }
+        public void ScanTable(string currentWord, Tesseract.Rect bounds)
+        {
+            if (currentWord == null || currentWord.Length == 0 || currentWord == "" || currentWord == " ")
+            {
+                lineCoordinates.Add(Tuple.Create(bounds.X1, bounds.Y1, bounds.X2, bounds.Y2));
             }
         }
         public (string powerOfAttorney, string issuedBy) ExtractData(string input)
@@ -554,7 +907,7 @@ namespace TTN
         public string RemoveFirstWord(string input, int n = 1)
         {
             int i = 1;
-            List<string> textList = input.Split().ToList();;
+            List<string> textList = input.Split().ToList(); ;
             for (int k = 0; k < textList.Count; k++)
             {
                 if (textList[k] == " " || textList[k] == "")
@@ -578,7 +931,7 @@ namespace TTN
                 {
                     var stackPanel = MainStackPanel;
                     if (stackPanel != null)
-                    {                        
+                    {
                         stackPanel.Children.Remove(grid_);
                         grid.Remove(grid_);
                     }
@@ -605,7 +958,7 @@ namespace TTN
         }
         private void DebugTesseractZone(string currentWord, Bitmap originalImage, Tesseract.Rect bounds, Bitmap copiedImage)
         {
-            if (currentWord != null && currentWord.Length != 0 && currentWord != "" && currentWord != " ")
+            if (currentWord != null && currentWord.Length != 0 && currentWord != "" && currentWord != " " && 1 < 1)
             {
                 for (int x = 0; x < originalImage.Width; x++)
                 {
@@ -657,8 +1010,8 @@ namespace TTN
             }
             copiedImage.SetPixel(bounds.X1, bounds.Y1, System.Drawing.Color.Green);
             copiedImage.SetPixel(bounds.X2, bounds.Y2, System.Drawing.Color.Green);
-            copiedImage.SetPixel(bounds.X1, bounds.Y2, System.Drawing.Color.Green);
-            copiedImage.SetPixel(bounds.X2, bounds.Y1, System.Drawing.Color.Green);
+            //copiedImage.SetPixel(bounds.X1, bounds.Y2, System.Drawing.Color.Green);
+            //copiedImage.SetPixel(bounds.X2, bounds.Y1, System.Drawing.Color.Green);
         }
         private Grid CreateDuplicatedGrid(int type, string data)
         {
@@ -711,7 +1064,7 @@ namespace TTN
             Button button2 = new Button();
             button2.Name = "buttonTable";
             button2.Content = "Просмотреть таблицу";
-            if(type == 14)
+            if (type == 14)
             {
                 button2.Visibility = Visibility.Visible;
             }
@@ -747,7 +1100,7 @@ namespace TTN
         int[] hZoom = new int[16];
         private void ZoomPanel(object sender, RoutedEventArgs e)
         {
-            if(nZoom == 0)
+            if (nZoom == 0)
             {
                 double width = imgBox.Width;
                 double height = imgBox.Height;
@@ -765,7 +1118,7 @@ namespace TTN
             {
                 nZoom++;
                 imgBox.Width = wZoom[nZoom];
-                imgBox.Height = hZoom[nZoom];                
+                imgBox.Height = hZoom[nZoom];
             }
         }
         private void ZoomMPanel(object sender, RoutedEventArgs e)
@@ -846,9 +1199,9 @@ namespace TTN
         }
         private void buttonTable_Click(object sender, RoutedEventArgs e)
         {
-            if(tb == null)
+            if (tb == null)
             {
-                tb = new Table();
+                tb = new Table(items);
                 tb.Closed += Tb_Closed;
                 tb.Show();
             }

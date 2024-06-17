@@ -19,21 +19,10 @@ namespace TTN
     /// </summary>
     public partial class Table : Window
     {
-        public Table()
+        List<DataRazdel1> items_ = new List<DataRazdel1>();
+        public Table(List<DataRazdel1> items)
         {
             InitializeComponent();
-            var items = new List<DataRazdel1>
-            {
-                new DataRazdel1 { НаименованиеТовара = "Кабель", 
-                    ЕдиницаИзмерения = "м", 
-                    Количество = 100 ,
-                    Цена = 100,
-                    Стоимость = 100,
-                    СтавкаНДС = "15%",
-                    СуммаНДС = 100,
-                    СтоимостьСНДС = 100,
-                    Примечание = "Он очень крутой"},
-            };
             dataGrid.ItemsSource = items;
         }
 
@@ -41,12 +30,12 @@ namespace TTN
         {
             public string НаименованиеТовара { get; set; }
             public string ЕдиницаИзмерения { get; set; }
-            public int Количество { get; set; }
-            public double Цена { get; set; }
-            public double Стоимость { get; set; }
+            public string Количество { get; set; }
+            public string Цена { get; set; }
+            public string Стоимость { get; set; }
             public string СтавкаНДС { get; set; }
-            public double СуммаНДС { get; set; }
-            public double СтоимостьСНДС { get; set; }
+            public string СуммаНДС { get; set; }
+            public string СтоимостьСНДС { get; set; }
             public string Примечание { get; set; }
         }
     }
