@@ -283,12 +283,12 @@
                    VerticalContentAlignment="Center" Width="546"
                    MouseDoubleClick="Label_MouseDoubleClick"    />
         </Viewbox>
-        <Button BorderBrush="{x:Null}" HorizontalAlignment="Right" Width="50" Height="50" VerticalAlignment="Bottom" Style="{StaticResource ImageButtonStyle4}" Click="ZoomPanel" Margin="0,0,50,0">
+        <Button Visibility="Hidden" x:Name="buttonZoom" BorderBrush="{x:Null}" HorizontalAlignment="Right" Width="50" Height="50" VerticalAlignment="Bottom" Style="{StaticResource ImageButtonStyle4}" Click="ZoomPanel" Margin="0,0,50,0">
             <Button.Background>
                 <ImageBrush ImageSource="/ZoomIn_16x.png"/>
             </Button.Background>
         </Button>
-        <Button BorderBrush="{x:Null}" HorizontalAlignment="Right" Width="50" Height="50" VerticalAlignment="Bottom" Style="{StaticResource ImageButtonStyle3}" Click="ZoomMPanel" RenderTransformOrigin="0.54,0.53">
+        <Button Visibility="Hidden" x:Name="buttonZoom2" BorderBrush="{x:Null}" HorizontalAlignment="Right" Width="50" Height="50" VerticalAlignment="Bottom" Style="{StaticResource ImageButtonStyle3}" Click="ZoomMPanel" RenderTransformOrigin="0.54,0.53">
             <Button.Background>
                 <ImageBrush ImageSource="/ZoomOut_16x.png"/>
             </Button.Background>
@@ -372,8 +372,8 @@
                 <Button Content="Перенести в Excel" Style="{StaticResource RoundedButtonStyle}" 
                         HorizontalAlignment="Stretch" 
                         Margin="21,271,20,-52" 
-                        VerticalAlignment="Stretch" IsEnabled="False"/>
-
+                        VerticalAlignment="Stretch" IsEnabled="False"
+                        x:Name="buttonExcel"/>
             </Grid>
         </Viewbox>
 

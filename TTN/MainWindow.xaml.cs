@@ -78,6 +78,10 @@ namespace TTN
             MainStackPanel.Children.Add(clonedGrid);
             grid.Add(clonedGrid);
             clonedGrid.Visibility = Visibility.Visible;
+            if (grid.Count != 0)
+            {
+                buttonExcel.IsEnabled = true;
+            }
         }
 
 
@@ -224,7 +228,6 @@ namespace TTN
             if (openFileDialog.ShowDialog() == true)
             {
                 string selectedFilePath = openFileDialog.FileName;
-                //MessageBox.Show($"Выбран файл: {selectedFilePath}");
                 BitmapImage bitmap = new BitmapImage();
                 bitmap.BeginInit();
                 bitmap.UriSource = new Uri(selectedFilePath, UriKind.RelativeOrAbsolute);
@@ -235,6 +238,8 @@ namespace TTN
                 //изменение состояния кнопок
                 buttonScan.IsEnabled = true;
                 menuButtonScan.IsEnabled = true;
+                buttonZoom.Visibility = Visibility.Visible;
+                buttonZoom2.Visibility = Visibility.Visible;
             }
         }
         List<Tuple<int, int, int, int>> lineCoordinates = new List<Tuple<int, int, int, int>>();
@@ -692,8 +697,8 @@ namespace TTN
                                         string tx = null;
                                         for (int n = 0; n < tables[0].KORDx.Count - 1; n++)
                                         {
-                                            System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[n]+2, tables[0].KORDy[l]+2); // Верхний левый угол
-                                            System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[n+1]-2, tables[0].KORDy[l + 1]-2); // Нижний правый угол
+                                            System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[n]+5, tables[0].KORDy[l]+5); // Верхний левый угол
+                                            System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[n+1]-5, tables[0].KORDy[l + 1]-5); // Нижний правый угол
 
                                             if(tables[0].KORDx[n] == tables[0].KORDx[n + 1])
                                             {
@@ -753,8 +758,8 @@ namespace TTN
                                         string tx = null;
                                         for (int n = 1; n < tables[0].KORDx.Count - 1; n++)
                                         {
-                                            System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[n] + 2, tables[0].KORDy[l] + 2); // Верхний левый угол
-                                            System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[n + 1] - 2, tables[0].KORDy[l + 1] - 2); // Нижний правый угол
+                                            System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[n] + 5, tables[0].KORDy[l] + 5); // Верхний левый угол
+                                            System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[n + 1] - 5, tables[0].KORDy[l + 1] - 5); // Нижний правый угол
                                             if (tables[0].KORDx[n] == tables[0].KORDx[n + 1])
                                             {
                                                 tables[0].KORDx.Remove(tables[0].KORDx[n]);
@@ -820,6 +825,11 @@ namespace TTN
                     writer.WriteLine(line);
                 }
             }
+
+            if(grid.Count != 0)
+            {
+                buttonExcel.IsEnabled = true;
+            }
         }
         public static string CleanString(string input)
         {
@@ -866,8 +876,23 @@ namespace TTN
                 g.DrawImage(original, new System.Drawing.Rectangle(0, 0, croppedImage.Width, croppedImage.Height), cropArea, GraphicsUnit.Pixel);
             }
             string outputDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "ConvertedImages");
-            croppedImage.Save(Path.Combine(outputDirectory, $"doc{cropArea.X}_{cropArea.Y}.png"));
-            return croppedImage;
+            
+            // Размеры нового изображения с учетом добавленных границ
+            int newWidth = croppedImage.Width + 2 * 30;
+            int newHeight = croppedImage.Height + 2 * 30;
+            Bitmap newImage = new Bitmap(newWidth, newHeight);
+            using (Graphics g = Graphics.FromImage(newImage))
+            {
+                g.Clear(System.Drawing.Color.White);
+
+                // Копируем оригинальное изображение в центр нового изображения
+                int x = 30;
+                int y = 30;
+                g.DrawImage(croppedImage, x, y, croppedImage.Width, croppedImage.Height);
+            }
+
+            newImage.Save(Path.Combine(outputDirectory, $"doc{cropArea.X}_{cropArea.Y}.png"));
+            return newImage;
         }
         public void ScanTable(string currentWord, Tesseract.Rect bounds)
         {
@@ -936,6 +961,10 @@ namespace TTN
                         grid.Remove(grid_);
                     }
                 }
+            }
+            if (grid.Count == 0)
+            {
+                buttonExcel.IsEnabled = false;
             }
         }
         private T FindParent<T>(DependencyObject child) where T : DependencyObject
