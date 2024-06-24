@@ -337,8 +337,36 @@
             </Button>
 
             <StackPanel Grid.Row="2">
-                <CheckBox x:Name="razdelChekPrefab" 
-                    Content="Раздел" 
+                <CheckBox
+                    Content="Шапка (УНП + дата)" 
+                    FontSize="20"
+                    Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
+                <CheckBox
+                    Content="Информация об автомобиле" 
+                    FontSize="20"
+                    Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
+                <CheckBox
+                    Content="Грузоотправитель и основания отпуска" 
+                    FontSize="20"
+                    Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
+                <CheckBox
+                    Content="Пункт погрузки и переадресовка" 
+                    FontSize="20"
+                    Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
+                <CheckBox
+                    Content="#Товарный раздел" 
+                    FontSize="20"
+                    Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
+                <CheckBox
+                    Content="Стоимость и стороны" 
+                    FontSize="20"
+                    Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
+                <CheckBox
+                    Content="#Погрузочно-разгрузочные операции" 
+                    FontSize="20"
+                    Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
+                <CheckBox
+                    Content="#Прочие сведенья" 
                     FontSize="20"
                     Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
             </StackPanel>
@@ -353,7 +381,7 @@
                      Content="Очистка от водяного знака" 
                      FontSize="20" 
                      Margin="21,-47,57,284"
-                     Style="{StaticResource LargeCheckBox}" IsChecked="True"/>
+                     Style="{StaticResource LargeCheckBox}" IsChecked="True" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
                 <CheckBox 
                      x:Name="checkFilter" 
                      Content="Автоматическая выгрузка в Excel" 

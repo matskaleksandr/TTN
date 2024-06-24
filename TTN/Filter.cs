@@ -13,25 +13,32 @@ namespace TTN
 {
     internal class Filter
     {
+        bool ochist = true;
+        public Filter(bool ochist_) 
+        { 
+            ochist = ochist_;
+        }
         public void FilterWhite(string path1, string outpath)
         {
             using (Image<Rgba32> image = Image.Load<Rgba32>(path1))
             {
-                image.Mutate(ctx =>
+                if (ochist == true)
                 {
-                    ctx.Contrast(2.0f);
-                    ctx.Brightness(1.5f);
-                    ctx.Brightness(0.8f);
-                    ctx.Saturate(0f);
-                    ctx.Brightness(1.2f);
-                    ctx.GaussianSharpen(1.5f);
-                    ctx.GaussianBlur(0.5f);
-                    ctx.Contrast(1.3f);
-                });
+                    image.Mutate(ctx =>
+                    {
+                        ctx.Contrast(2.0f);
+                        ctx.Brightness(1.5f);
+                        ctx.Brightness(0.8f);
+                        ctx.Saturate(0f);
+                        ctx.Brightness(1.2f);
+                        ctx.GaussianSharpen(1.5f);
+                        ctx.GaussianBlur(0.5f);
+                        ctx.Contrast(1.3f);
+                    });
+                }
                 image.Save(Path.Combine(outpath, $"doc1.png"));
                 MessageBox.Show("???");
                 MessageBox.Show(Path.Combine(outpath, $"doc1.png"));
-                //image.Save("M://doc1.png");
             }
         }
     }
