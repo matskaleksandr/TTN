@@ -229,15 +229,7 @@ namespace TTN
             {
                 string selectedFilePath = openFileDialog.FileName;
                 BitmapImage bitmap = new BitmapImage();
-                documentV = null;
-                if (bitmap.Width > bitmap.Height)
-                {
-
-                }
-                else
-                {
-                    documentV = new DocumentVertical();
-                }
+                documentV = null;                
                 bitmap.BeginInit();
                 bitmap.UriSource = new Uri(selectedFilePath, UriKind.RelativeOrAbsolute);
                 bitmap.EndInit();
@@ -249,6 +241,15 @@ namespace TTN
                 menuButtonScan.IsEnabled = true;
                 buttonZoom.Visibility = Visibility.Visible;
                 buttonZoom2.Visibility = Visibility.Visible;
+                if (bitmap.Width > bitmap.Height)
+                {
+
+                }
+                else
+                {
+                    documentV = new DocumentVertical();
+                   
+                }
             }
         }
         List<Tuple<int, int, int, int>> lineCoordinates = new List<Tuple<int, int, int, int>>();
@@ -522,6 +523,7 @@ namespace TTN
                             {
                                 string[] lineData = line.Split();
                                 data = lineData[2];
+                                cb1.IsChecked = true;
                                 break;
                             }
                         }
@@ -541,6 +543,7 @@ namespace TTN
                             {
                                 string[] lineData = line.Split();
                                 data = lineData[3];
+                                cb1.IsChecked = true;
                                 break;
                             }
                         }
@@ -562,6 +565,7 @@ namespace TTN
                                 documentV.Date = match.Value;
                             }
                             AddData(3, match.Value);
+                            cb1.IsChecked = true;
                             boolDateHead = true;
                         }
                     }
@@ -582,6 +586,7 @@ namespace TTN
                             {
                                 documentV.GruzOtprName = RemoveFirstWord(text, 1);
                             }
+                            cb3.IsChecked = true;
                             AddData(4, RemoveFirstWord(text, 1));
                             boolGruzootpav = true;                            
                         }
@@ -603,6 +608,7 @@ namespace TTN
                             {
                                 documentV.GruzPoluchName = RemoveFirstWord(text, 2);
                             }
+                            cb3.IsChecked = true;
                             AddData(5, RemoveFirstWord(text));
                             boolGruzopoluch = true;
                         }
@@ -616,6 +622,7 @@ namespace TTN
                             {
                                 documentV.OsnOtpusk = RemoveFirstWord(text, 2);
                             }
+                            cb3.IsChecked = true;
                             AddData(6, RemoveFirstWord(text, 2));
                             boolOsnovanOtpusk = true;
                         }
@@ -629,6 +636,7 @@ namespace TTN
                             {
                                 documentV.VsegoSummNDS = RemoveFirstWord(text, 3);
                             }
+                            cb6.IsChecked = true;
                             AddData(7, RemoveFirstWord(text, 3));
                             boolVsegoSummaNDS = true;
                         }
@@ -642,6 +650,7 @@ namespace TTN
                             {
                                 documentV.VsegoStoimSNDS = RemoveFirstWord(text, 4);
                             }
+                            cb6.IsChecked = true;
                             AddData(8, RemoveFirstWord(text, 4));
                             boolVsegoStoimostSNDS = true;
                         }
@@ -655,6 +664,7 @@ namespace TTN
                             {
                                 documentV.OtpuskRazresh = RemoveFirstWord(text, 2);
                             }
+                            cb6.IsChecked = true;
                             AddData(9, RemoveFirstWord(text, 2));
                             boolOtpuskRazreshil = true;
                         }
@@ -668,6 +678,7 @@ namespace TTN
                             {
                                 documentV.SdalGruzootpav = RemoveFirstWord(text, 2);
                             }
+                            cb6.IsChecked = true;
                             AddData(10, RemoveFirstWord(text, 2));
                             boolSdalGruzootpravit = true;
                         }
@@ -683,6 +694,7 @@ namespace TTN
                             {
                                 documentV.TovarKPerevozkePrin = RemoveFirstWord(text, 4);
                             }
+                            cb6.IsChecked = true;
                             AddData(11, RemoveFirstWord(text, 4));
                             boolTovarKDostavkePrin = true;
                         }
@@ -699,6 +711,7 @@ namespace TTN
                                 {
                                     documentV.PoDover = data.powerOfAttorney;
                                 }
+                                cb6.IsChecked = true;
                                 AddData(12, data.powerOfAttorney);
                                 boolPoDoverenn = true;
                             }
@@ -716,6 +729,7 @@ namespace TTN
                                 {
                                     documentV.Vidannoi = data.issuedBy;
                                 }
+                                cb6.IsChecked = true;
                                 AddData(13, data.issuedBy);
                                 boolDoverennVidana = true;
                             }
@@ -728,6 +742,7 @@ namespace TTN
                         {
                             MessageBox.Show("!!!");
                             AddData(14, null);
+                            cb5.IsChecked = true;
                             if (tables.Count != 0)
                             {
                                 if (tables[0] != null)
@@ -1216,7 +1231,7 @@ namespace TTN
         }
         private void ZoomMPanel(object sender, RoutedEventArgs e)
         {
-            if (nZoom >= 0)
+            if (nZoom >= 1)
             {
                 nZoom--;
                 imgBox.Width = wZoom[nZoom];
@@ -1313,6 +1328,15 @@ namespace TTN
         {
             ochist = !ochist;
             //MessageBox.Show(ochist.ToString());
+        }
+
+        private void buttonExcel_Click(object sender, RoutedEventArgs e)
+        {
+            if(documentV != null)
+            {
+                documentV.table1 = items;
+                documentV.ConvertToExcel(this);
+            }
         }
     }
 }

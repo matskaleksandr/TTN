@@ -337,27 +337,27 @@
             </Button>
 
             <StackPanel Grid.Row="2">
-                <CheckBox
+                <CheckBox x:Name="cb1"
                     Content="Шапка (УНП + дата)" 
                     FontSize="20"
                     Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
-                <CheckBox
+                <CheckBox x:Name="cb2"
                     Content="Информация об автомобиле" 
                     FontSize="20"
                     Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
-                <CheckBox
+                <CheckBox x:Name="cb3"
                     Content="Грузоотправитель и основания отпуска" 
                     FontSize="20"
                     Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
-                <CheckBox
+                <CheckBox x:Name="cb4"
                     Content="Пункт погрузки и переадресовка" 
                     FontSize="20"
                     Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
-                <CheckBox
+                <CheckBox x:Name="cb5"
                     Content="#Товарный раздел" 
                     FontSize="20"
                     Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
-                <CheckBox
+                <CheckBox x:Name="cb6"
                     Content="Стоимость и стороны" 
                     FontSize="20"
                     Style="{StaticResource LargeCheckBox}" Width="624" Height="58" RenderTransformOrigin="0.5,0.5" IsChecked="False"/>
@@ -401,7 +401,7 @@
                         HorizontalAlignment="Stretch" 
                         Margin="21,271,20,-52" 
                         VerticalAlignment="Stretch" IsEnabled="False"
-                        x:Name="buttonExcel"/>
+                        x:Name="buttonExcel" Click="buttonExcel_Click"/>
             </Grid>
         </Viewbox>
 
