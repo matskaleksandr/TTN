@@ -353,6 +353,7 @@ namespace TTN
         }//обработка таблиц
         public void Scan(object sender, RoutedEventArgs e)
         {
+            System.IO.Directory.CreateDirectory(@"ConvertedImages");
             string outputDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "ConvertedImages");
             if (checkFilter.IsChecked == false)
             {
@@ -471,7 +472,7 @@ namespace TTN
             bool boolTOVARNRAZDEL = false;
 
             DetermineEdgeType(lineCoordinates);
-            MessageBox.Show(tables.Count.ToString());
+            //MessageBox.Show(tables.Count.ToString());
             Bitmap originalImage2 = new Bitmap(Path.Combine(outputDirectory, $"doc1.png"));
             Bitmap copiedImage2 = new Bitmap(originalImage2.Width, originalImage2.Height);
 
@@ -740,11 +741,11 @@ namespace TTN
                         string text = string.Join("", listOfRows[i]);
                         if (text.IndexOf("ТОВАРНЫЙ", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("РАЗДЕЛ", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
-                            MessageBox.Show("!!!");
+                            //MessageBox.Show("!!!");
                             AddData(14, null);
                             cb5.IsChecked = true;
                             if (tables.Count != 0)
-                            {
+                            {           
                                 if (tables[0] != null)
                                 {
                                     bool p = false;
@@ -801,6 +802,11 @@ namespace TTN
                                                                 razd.ЕдиницаИзмерения = tx;
                                                                 break;
                                                             case 2:
+                                                                if(string.IsNullOrWhiteSpace(tx))
+                                                                {
+                                                                    tx = "1";
+                                                                }
+                                                                //MessageBox.Show(tx);
                                                                 razd.Количество = tx;
                                                                 break;
                                                             case 3:
@@ -861,6 +867,11 @@ namespace TTN
                                                                 razd.ЕдиницаИзмерения = tx;
                                                                 break;
                                                             case 3:
+                                                                if (string.IsNullOrWhiteSpace(tx))
+                                                                {
+                                                                    tx = "1";
+                                                                }
+                                                                //MessageBox.Show(tx);
                                                                 razd.Количество = tx;
                                                                 break;
                                                             case 4:
@@ -896,14 +907,14 @@ namespace TTN
                 }
             }
 
-            using (StreamWriter writer = new StreamWriter("M://info.txt", false, Encoding.UTF8))
-            {
-                foreach (var row in listOfRows)
-                {
-                    string line = string.Join("", row);
-                    writer.WriteLine(line);
-                }
-            }
+            //using (StreamWriter writer = new StreamWriter("M://info.txt", false, Encoding.UTF8))
+            //{
+            //    foreach (var row in listOfRows)
+            //    {
+            //        string line = string.Join("", row);
+            //        writer.WriteLine(line);
+            //    }
+            //}
 
             if(grid.Count != 0)
             {
@@ -1336,6 +1347,8 @@ namespace TTN
             {
                 documentV.table1 = items;
                 documentV.ConvertToExcel(this);
+                Process.Start(new ProcessStartInfo(@"Exits\file.xlsx") { UseShellExecute = true });
+                Process.Start("explorer.exe", @"Exits");
             }
         }
     }

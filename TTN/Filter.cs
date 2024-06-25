@@ -37,8 +37,8 @@ namespace TTN
                     });
                 }
                 image.Save(Path.Combine(outpath, $"doc1.png"));
-                MessageBox.Show("???");
-                MessageBox.Show(Path.Combine(outpath, $"doc1.png"));
+                //MessageBox.Show("???");
+                //MessageBox.Show(Path.Combine(outpath, $"doc1.png"));
             }
         }
     }

@@ -60,8 +60,10 @@ namespace TTN
 
         //данные
         public string VsegoSummNDS = "";                              //Всего сумма НДС
+        public string VsegoSummNDSKop = "";
 
         public string VsegoStoimSNDS = "";                            //Всего стоимость с НДС
+        public string VsegoStoimSNDSKop = "";
 
         public string VsegoMassGruz = "";                             //Всего масса груза
 
@@ -88,7 +90,7 @@ namespace TTN
 
         public int globalRow = 1;
 
-        public void CopyTable(int startRowForSecondTable, string filePath1 = "", string filePath2 = "", string outputPath = @"ExcelVertical\file.xlsx")
+        public void CopyTable(int startRowForSecondTable, string filePath1 = "", string filePath2 = "", string outputPath = @"ExcelVertical\file1.xlsx")
         {
             using (var package1 = new ExcelPackage(new FileInfo(filePath1)))
             using (var package2 = new ExcelPackage(new FileInfo(filePath2)))
@@ -156,9 +158,15 @@ namespace TTN
         }
         public void ConvertToExcel(MainWindow main)
         {
+            globalRow = 1;
             string filePath1 = "";
             string filePath2 = "";
-            string outputPath = @"ExcelVertical\file.xlsx";
+            string outputPath = @"ExcelVertical\file1.xlsx";
+            if (System.IO.File.Exists(@"ExcelVertical\file1.xlsx"))
+            {
+                System.IO.File.Delete(@"ExcelVertical\file1.xlsx");
+            }
+            System.IO.File.Copy(@"ExcelVertical\file.xlsx", @"ExcelVertical\file1.xlsx");
 
             bool isCheckedValue = main.cb1.IsChecked.HasValue && main.cb1.IsChecked.Value;
             ShapkaYNPDate = isCheckedValue;
@@ -168,9 +176,9 @@ namespace TTN
             GruzootpravitIOtpusk = isCheckedValue3;
             bool isCheckedValue4 = main.cb4.IsChecked.HasValue && main.cb4.IsChecked.Value;
             PunktPogruzkiPereeadresovki = isCheckedValue4;
-            bool isCheckedValue5 = main.cb5.IsChecked.HasValue && main.cb5.IsChecked.Value;
+            bool isCheckedValue5 = main.cb6.IsChecked.HasValue && main.cb6.IsChecked.Value;
             StoimostIStoroni = isCheckedValue5;
-            bool isCheckedValue6 = main.cb6.IsChecked.HasValue && main.cb6.IsChecked.Value;
+            bool isCheckedValue6 = main.cb5.IsChecked.HasValue && main.cb5.IsChecked.Value;
             TovarnRazdel = isCheckedValue6;
 
 
@@ -178,56 +186,146 @@ namespace TTN
             if (ShapkaYNPDate == true)
             {                
                 filePath2 = @"ExcelVertical\Шапка.xlsx";
-                filePath1 = @"ExcelVertical\file.xlsx";
+                filePath1 = @"ExcelVertical\file1.xlsx";
                 CopyTable(globalRow, filePath1, filePath2, outputPath);
+                using (ExcelPackage package = new ExcelPackage(new FileInfo(outputPath)))
+                {
+                    ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
+                    worksheet.Cells[globalRow + 3, 38].Value = GruzOtpr;
+                    worksheet.Cells[globalRow + 3, 51].Value = GruzPoluch;
+                    worksheet.Cells[globalRow + 15, 10].Value = Date;
+                    package.Save();
+                }
                 globalRow += 17;
             }
             if (AutoInfo == true)
             {                
                 filePath2 = @"ExcelVertical\Автомобиль.xlsx";
-                filePath1 = @"ExcelVertical\file.xlsx";
+                filePath1 = @"ExcelVertical\file1.xlsx";
                 CopyTable(globalRow, filePath1, filePath2, outputPath);
+                using (ExcelPackage package = new ExcelPackage(new FileInfo(outputPath)))
+                {
+                    ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
+                    worksheet.Cells[globalRow, 14].Value = Avto;
+                    worksheet.Cells[globalRow, 88].Value = Pricep;
+                    worksheet.Cells[globalRow + 2, 21].Value = KPutList;
+                    worksheet.Cells[globalRow + 4, 11].Value = Voditel;
+                    worksheet.Cells[globalRow + 7, 45].Value = ZakazchikPerevozki;
+                    package.Save();
+                }
                 globalRow += 10;
             }
             if (GruzootpravitIOtpusk == true)
             {                
                 filePath2 = @"ExcelVertical\Грузоотправитель.xlsx";
-                filePath1 = @"ExcelVertical\file.xlsx";
+                filePath1 = @"ExcelVertical\file1.xlsx";
                 CopyTable(globalRow, filePath1, filePath2, outputPath);
+                using (ExcelPackage package = new ExcelPackage(new FileInfo(outputPath)))
+                {
+                    ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
+                    worksheet.Cells[globalRow, 18].Value = GruzOtprName;
+                    worksheet.Cells[globalRow + 2, 18].Value = GruzPoluchName;
+                    worksheet.Cells[globalRow + 4, 17].Value = OsnOtpusk;
+                    package.Save();
+                }
                 globalRow += 6;
             }
             if (PunktPogruzkiPereeadresovki == true)
             {
                 filePath2 = @"ExcelVertical\Пункты.xlsx";
-                filePath1 = @"ExcelVertical\file.xlsx";
+                filePath1 = @"ExcelVertical\file1.xlsx";
                 CopyTable(globalRow, filePath1, filePath2, outputPath);
+                using (ExcelPackage package = new ExcelPackage(new FileInfo(outputPath)))
+                {
+                    ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
+                    worksheet.Cells[globalRow, 17].Value = PunktPogruzk;
+                    worksheet.Cells[globalRow, 87].Value = PunktRazgruzki;
+                    worksheet.Cells[globalRow + 2, 16].Value = Pereadresovka;
+                    package.Save();
+                }
                 globalRow += 8;
             }
             if(TovarnRazdel == true)
             {
                 filePath2 = @"ExcelVertical\Товарная1.xlsx";
-                filePath1 = @"ExcelVertical\file.xlsx";
+                filePath1 = @"ExcelVertical\file1.xlsx";
                 CopyTable(globalRow, filePath1, filePath2, outputPath);
                 globalRow += 3;
-                for(int i = 0; i < table1.Count; i++)
+                for(int i = 0; i < table1.Count - 1; i++)
                 {
                     filePath2 = @"ExcelVertical\Товарная2.xlsx";
-                    filePath1 = @"ExcelVertical\file.xlsx";
+                    filePath1 = @"ExcelVertical\file1.xlsx";
                     CopyTable(globalRow, filePath1, filePath2, outputPath);
+                    using (ExcelPackage package = new ExcelPackage(new FileInfo(outputPath)))
+                    {
+                        ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
+                        worksheet.Cells[globalRow, 1].Value = table1[i].НаименованиеТовара;
+                        worksheet.Cells[globalRow, 32].Value = table1[i].ЕдиницаИзмерения;
+                        worksheet.Cells[globalRow, 41].Value = table1[i].Количество;
+                        worksheet.Cells[globalRow, 50].Value = table1[i].Цена;
+                        worksheet.Cells[globalRow, 63].Value = table1[i].Стоимость;
+                        worksheet.Cells[globalRow, 75].Value = table1[i].СтавкаНДС;
+                        worksheet.Cells[globalRow, 82].Value = table1[i].СуммаНДС;
+                        worksheet.Cells[globalRow, 93].Value = table1[i].СтоимостьСНДС;
+                        worksheet.Cells[globalRow, 105].Value = "";
+                        worksheet.Cells[globalRow, 114].Value = "";
+                        worksheet.Cells[globalRow, 124].Value = table1[i].Примечание;
+                        package.Save();
+                    }
                     globalRow += 1;
                 }
                 filePath2 = @"ExcelVertical\Товарная3.xlsx";
-                filePath1 = @"ExcelVertical\file.xlsx";
+                filePath1 = @"ExcelVertical\file1.xlsx";
                 CopyTable(globalRow, filePath1, filePath2, outputPath);
+                using (ExcelPackage package = new ExcelPackage(new FileInfo(outputPath)))
+                {
+                    ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
+                    worksheet.Cells[globalRow, 41].Value = table1[table1.Count - 1].Количество;
+                    worksheet.Cells[globalRow, 63].Value = table1[table1.Count - 1].Стоимость;
+                    worksheet.Cells[globalRow, 82].Value = table1[table1.Count - 1].СуммаНДС;
+                    worksheet.Cells[globalRow, 93].Value = table1[table1.Count - 1].СтоимостьСНДС;
+                    package.Save();
+                }
                 globalRow += 1;
             }
             if (StoimostIStoroni == true)
             {
                 filePath2 = @"ExcelVertical\СтоимостьИСтороны.xlsx";
-                filePath1 = @"ExcelVertical\file.xlsx";
+                filePath1 = @"ExcelVertical\file1.xlsx";
                 CopyTable(globalRow, filePath1, filePath2, outputPath);
+                using (ExcelPackage package = new ExcelPackage(new FileInfo(outputPath)))
+                {
+                    ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
+                    worksheet.Cells[globalRow, 19].Value = VsegoSummNDS;
+                    worksheet.Cells[globalRow, 108].Value = VsegoSummNDSKop;
+
+                    worksheet.Cells[globalRow + 3, 23].Value = VsegoStoimSNDS;
+                    worksheet.Cells[globalRow + 3, 108].Value = VsegoStoimSNDSKop;
+
+                    worksheet.Cells[globalRow + 5, 15].Value = VsegoMassGruz;
+                    worksheet.Cells[globalRow + 5, 87].Value = VsegoKolGruzMest;
+
+                    worksheet.Cells[globalRow + 7, 15].Value = OtpuskRazresh;
+                    worksheet.Cells[globalRow + 11, 19].Value = SdalGruzootpav;
+                    worksheet.Cells[globalRow + 16, 10].Value = NoPlomb;
+
+                    worksheet.Cells[globalRow + 7, 83].Value = TovarKPerevozkePrin;
+                    worksheet.Cells[globalRow + 11, 76].Value = PoDover;
+                    worksheet.Cells[globalRow + 13, 71].Value = Vidannoi;
+                    worksheet.Cells[globalRow + 15, 82].Value = PrinGruzopoluch;
+                    worksheet.Cells[globalRow + 19, 74].Value = NoPlomb2;
+
+                    package.Save();
+                }
                 globalRow += 23;
             }
+
+            System.IO.Directory.CreateDirectory(@"Exits");
+            if (System.IO.File.Exists(@"Exits\file.xlsx"))
+            {
+                System.IO.File.Delete(@"Exits\file.xlsx");
+            }
+            System.IO.File.Copy(@"ExcelVertical\file1.xlsx", @"Exits\file.xlsx");
         }
 
         static void CopyCellStyle(ExcelStyle sourceStyle, ExcelStyle targetStyle)
