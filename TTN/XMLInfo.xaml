@@ -1,0 +1,13 @@
+﻿<Window x:Class="TTN.XMLInfo"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TTN"
+        mc:Ignorable="d"
+        Title="XMLInfo" Height="600" Width="1000" Background="Black">
+    <Grid>
+        <TextBox x:Name="tCode" TextWrapping="Wrap" Text="TextBoxf" Background="#FF0A0A0A" Foreground="#FFFF8000" FontSize="24"/>
+
+    </Grid>
+</Window>

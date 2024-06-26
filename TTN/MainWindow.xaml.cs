@@ -51,7 +51,7 @@ namespace TTN
             "ВсегоCтоимостьCНДС",
             "ОтпускРазрешил",
             "СдалГрузоотправитель",
-            "ТоварКДоставкеПринял",
+            "ТоварКПеревозкеПринял",
             "ПоДоверенности(#)",
             "ДоверенностьВыдана",
             "1ТОВАРНЫЙРАЗДЕЛ",
@@ -78,9 +78,10 @@ namespace TTN
             MainStackPanel.Children.Add(clonedGrid);
             grid.Add(clonedGrid);
             clonedGrid.Visibility = Visibility.Visible;
-            if (grid.Count != 0)
+            if (grid.Count != 0 && (documentV != null || documentV != null))
             {
                 buttonExcel.IsEnabled = true;
+                buttonXML.IsEnabled = true;
             }
         }
 
@@ -229,7 +230,7 @@ namespace TTN
             {
                 string selectedFilePath = openFileDialog.FileName;
                 BitmapImage bitmap = new BitmapImage();
-                documentV = null;                
+                documentV = null;
                 bitmap.BeginInit();
                 bitmap.UriSource = new Uri(selectedFilePath, UriKind.RelativeOrAbsolute);
                 bitmap.EndInit();
@@ -248,7 +249,7 @@ namespace TTN
                 else
                 {
                     documentV = new DocumentVertical();
-                   
+
                 }
             }
         }
@@ -351,575 +352,624 @@ namespace TTN
                 }
             }
         }//обработка таблиц
-        public void Scan(object sender, RoutedEventArgs e)
+        public async Task Scan()
         {
-            System.IO.Directory.CreateDirectory(@"ConvertedImages");
-            string outputDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "ConvertedImages");
-            if (checkFilter.IsChecked == false)
-            {
-                Filter filter = new Filter(ochist);
-                filter.FilterWhite(pathfile, outputDirectory);
-            }
-
-            List<string> rows = new List<string>();
-            List<List<string>> listOfRows = new List<List<string>>();
-
-            bool tablecheck = false;
-
-            using (var engine = new TesseractEngine(@"D:\Programm\editor\Tesseract-OCR\tessdata", "eng+rus", EngineMode.Default))
-            {
-                using (var image = Pix.LoadFromFile(Path.Combine(outputDirectory, $"doc1.png")))
-                {
-                    using (var page = engine.Process(image, PageSegMode.Auto))
-                    {
-                        using (var package = new ExcelPackage())
-                        {
-                            using (var iterator = page.GetIterator())
-                            {
-                                iterator.Begin();
-                                int row = 1;
-                                double MaxX = 0;
-                                double MaxY = 0;
-                                int nRow = 1;
-                                Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png"));
-                                Bitmap copiedImage = new Bitmap(originalImage.Width, originalImage.Height);
-
-                                int width = originalImage.Width;
-                                int height = originalImage.Height;
-
-                                if (width > height)
-                                {
-                                    vertical = false;
-                                }
-                                else if (height > width)
-                                {
-                                    vertical = true;
-                                    documentV = new DocumentVertical();
-                                }
-
-                                do
-                                {
-                                    string currentWord = iterator.GetText(PageIteratorLevel.Word);
-                                    iterator.TryGetBoundingBox(PageIteratorLevel.Word, out Tesseract.Rect bounds);
-                                    string text = string.Join("", rows);
-                                    if (text.IndexOf("ТОВАРНЫЙ", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("РАЗДЕЛ", StringComparison.OrdinalIgnoreCase) >= 0)
-                                    {
-                                        tablecheck = true;
-                                    }
-                                    if (tablecheck == true)
-                                    {
-                                        ScanTable(currentWord, bounds);
-                                    }
-                                    if (currentWord == "|")
-                                    {
-                                        currentWord = null;
-                                    }
-                                    if (bounds.X1 < MaxX)
-                                    {
-                                        MaxX = bounds.X1;
-                                        nRow++;
-                                        rows = new List<string>();
-                                    }
-                                    else if (Math.Abs((float)((bounds.Y1 + bounds.Y2) / 2) - MaxY) > 200)
-                                    {
-                                        MaxY = (float)((bounds.Y1 + bounds.Y2) / 2);
-                                        nRow++;
-                                        rows = new List<string>();
-                                    }
-                                    else
-                                    {
-                                        MaxX = bounds.X1;
-                                        MaxY = (float)((bounds.Y1 + bounds.Y2) / 2);
-                                    }
-                                    rows.Add(" " + currentWord);
-                                    if (listOfRows.Count != nRow)
-                                    {
-                                        listOfRows.Add(rows);
-                                    }
-                                    else
-                                    {
-                                        listOfRows[nRow - 1] = rows;
-                                    }
-                                    if (1 > 1)
-                                    {
-                                        DebugTesseractZone(currentWord, originalImage, bounds, copiedImage);
-                                    }
-                                    row++;
-                                } while (iterator.Next(PageIteratorLevel.Word));
-                                copiedImage.Save(Path.Combine(outputDirectory, $"doc2.png"));
-                                originalImage.Dispose();
-                                copiedImage.Dispose();
-                            }
-                            //package.SaveAs(new FileInfo(excelFilePath));
-                        }
-                    }
-                }
-            }
-
-            int maxDistance = 2;
-
-            bool boolDateHead = false;
-            bool boolGruzootpav = false;
-            bool boolGruzopoluch = false;
-            bool boolOsnovanOtpusk = false;
-            bool boolVsegoSummaNDS = false;
-            bool boolVsegoStoimostSNDS = false;
-            bool boolOtpuskRazreshil = false;
-            bool boolSdalGruzootpravit = false;
-            bool boolTovarKDostavkePrin = false;
-            bool boolPoDoverenn = false;
-            bool boolDoverennVidana = false;
-            bool boolTOVARNRAZDEL = false;
-
-            DetermineEdgeType(lineCoordinates);
-            //MessageBox.Show(tables.Count.ToString());
-            Bitmap originalImage2 = new Bitmap(Path.Combine(outputDirectory, $"doc1.png"));
-            Bitmap copiedImage2 = new Bitmap(originalImage2.Width, originalImage2.Height);
-
-            foreach (var table in tables)
-            {
-                for (int i = table.KORDx[0]; i < table.KORDx[table.KORDx.Count - 1]; i++)
-                {
-                    foreach (var y in table.KORDy)
-                    {
-                        copiedImage2.SetPixel(i, y, System.Drawing.Color.Yellow);
-                    }
-                }
-                for (int i = table.KORDy[0]; i < table.KORDy[table.KORDy.Count - 1]; i++)
-                {
-                    foreach (var x in table.KORDx)
-                    {
-                        copiedImage2.SetPixel(x, i, System.Drawing.Color.Yellow);
-                    }
-                }
-            }
-            foreach (var table in tables)
-            {
-                foreach (var x in table.KORDx)
-                {
-                    foreach (var y in table.KORDy)
-                    {
-                        copiedImage2.SetPixel(x, y, System.Drawing.Color.White);
-                    }
-                }
-            }
-            copiedImage2.Save(Path.Combine(outputDirectory, $"doc3.png"));
-            originalImage2.Dispose();
-            copiedImage2.Dispose();
-
-            for (int i = 0; i < listOfRows.Count; i++)
-            {
-
-                for (int j = 0; j < listOfRows[i].Count; j++)
-                {
-                    string currentWord = listOfRows[i][j];
-
-                    if (currentWord.IndexOf("Грузоотправитель", StringComparison.OrdinalIgnoreCase) >= 0 && i < 8)
-                    {
-                        string data = null;
-                        foreach (var row in listOfRows)
-                        {
-                            string line = string.Join("", row);
-                            if (line.IndexOf("УНП", StringComparison.OrdinalIgnoreCase) >= 0)
-                            {
-                                string[] lineData = line.Split();
-                                data = lineData[2];
-                                cb1.IsChecked = true;
-                                break;
-                            }
-                        }
-                        if(documentV != null)
-                        {
-                            documentV.GruzOtpr = data;
-                        }
-                        AddData(0, data);
-                    }
-                    if (currentWord.IndexOf("Грузополучатель", StringComparison.OrdinalIgnoreCase) >= 0 && i < 8)
-                    {
-                        string data = null;
-                        foreach (var row in listOfRows)
-                        {
-                            string line = string.Join("", row);
-                            if (line.IndexOf("УНП", StringComparison.OrdinalIgnoreCase) >= 0)
-                            {
-                                string[] lineData = line.Split();
-                                data = lineData[3];
-                                cb1.IsChecked = true;
-                                break;
-                            }
-                        }
-                        if (documentV != null)
-                        {
-                            documentV.GruzPoluch = data;
-                        }
-                        AddData(1, data);
-                    }
-                    if (boolDateHead == false)
-                    {
-                        string pattern = @"\b\d{1,2}\s(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s\d{4}\b";
-                        Regex regex = new Regex(pattern, RegexOptions.IgnoreCase);
-                        Match match = regex.Match(string.Join("", listOfRows[i]));
-                        if (match.Success)
-                        {
-                            if (documentV != null)
-                            {
-                                documentV.Date = match.Value;
-                            }
-                            AddData(3, match.Value);
-                            cb1.IsChecked = true;
-                            boolDateHead = true;
-                        }
-                    }
-                    if (boolGruzootpav == false)
-                    {
-                        string text = string.Join("", listOfRows[i]);
-                        List<string> textList = text.Split().ToList();
-                        for (int k = 0; k < textList.Count; k++)
-                        {
-                            if (textList[k] == " " || textList[k] == "")
-                            {
-                                textList.Remove(textList[k]);
-                            }
-                        }
-                        if (currentWord.IndexOf("Грузоотправитель", StringComparison.OrdinalIgnoreCase) >= 0 && textList.Count > 4)
-                        {
-                            if (documentV != null)
-                            {
-                                documentV.GruzOtprName = RemoveFirstWord(text, 1);
-                            }
-                            cb3.IsChecked = true;
-                            AddData(4, RemoveFirstWord(text, 1));
-                            boolGruzootpav = true;                            
-                        }
-                    }
-                    if (boolGruzopoluch == false)
-                    {
-                        string text = string.Join("", listOfRows[i]);
-                        List<string> textList = text.Split().ToList();
-                        for (int k = 0; k < textList.Count; k++)
-                        {
-                            if (textList[k] == " " || textList[k] == "")
-                            {
-                                textList.Remove(textList[k]);
-                            }
-                        }
-                        if (currentWord.IndexOf("Грузополучатель", StringComparison.OrdinalIgnoreCase) >= 0 && textList.Count > 4)
-                        {
-                            if (documentV != null)
-                            {
-                                documentV.GruzPoluchName = RemoveFirstWord(text, 2);
-                            }
-                            cb3.IsChecked = true;
-                            AddData(5, RemoveFirstWord(text));
-                            boolGruzopoluch = true;
-                        }
-                    }
-                    if (boolOsnovanOtpusk == false)
-                    {
-                        string text = string.Join("", listOfRows[i]);
-                        if (text.IndexOf("Основание", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("отпуска", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            if (documentV != null)
-                            {
-                                documentV.OsnOtpusk = RemoveFirstWord(text, 2);
-                            }
-                            cb3.IsChecked = true;
-                            AddData(6, RemoveFirstWord(text, 2));
-                            boolOsnovanOtpusk = true;
-                        }
-                    }
-                    if (boolVsegoSummaNDS == false)
-                    {
-                        string text = string.Join("", listOfRows[i]);
-                        if (text.IndexOf("Всего", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("сумма", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("НДС", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            if (documentV != null)
-                            {
-                                documentV.VsegoSummNDS = RemoveFirstWord(text, 3);
-                            }
-                            cb6.IsChecked = true;
-                            AddData(7, RemoveFirstWord(text, 3));
-                            boolVsegoSummaNDS = true;
-                        }
-                    }
-                    if (boolVsegoStoimostSNDS == false)
-                    {
-                        string text = string.Join("", listOfRows[i]);
-                        if (text.IndexOf("Всего", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("стоимость", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("с", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("НДС", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            if (documentV != null)
-                            {
-                                documentV.VsegoStoimSNDS = RemoveFirstWord(text, 4);
-                            }
-                            cb6.IsChecked = true;
-                            AddData(8, RemoveFirstWord(text, 4));
-                            boolVsegoStoimostSNDS = true;
-                        }
-                    }
-                    if (boolOtpuskRazreshil == false)
-                    {
-                        string text = string.Join("", listOfRows[i]);
-                        if (text.IndexOf("Отпуск", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("разрешил", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            if (documentV != null)
-                            {
-                                documentV.OtpuskRazresh = RemoveFirstWord(text, 2);
-                            }
-                            cb6.IsChecked = true;
-                            AddData(9, RemoveFirstWord(text, 2));
-                            boolOtpuskRazreshil = true;
-                        }
-                    }
-                    if (boolSdalGruzootpravit == false)
-                    {
-                        string text = string.Join("", listOfRows[i]);
-                        if (text.IndexOf("Сдал", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("Грузоотправитель", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            if (documentV != null)
-                            {
-                                documentV.SdalGruzootpav = RemoveFirstWord(text, 2);
-                            }
-                            cb6.IsChecked = true;
-                            AddData(10, RemoveFirstWord(text, 2));
-                            boolSdalGruzootpravit = true;
-                        }
-                    }
-                    if (boolTovarKDostavkePrin == false)
-                    {
-                        string text = string.Join("", listOfRows[i]);
-                        if (text.IndexOf("Товар", StringComparison.OrdinalIgnoreCase) >= 0
-                            && text.IndexOf("к", StringComparison.OrdinalIgnoreCase) >= 0
-                            && (text.IndexOf("доставке", StringComparison.OrdinalIgnoreCase) >= 0) || text.IndexOf("перевозке", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            if (documentV != null)
-                            {
-                                documentV.TovarKPerevozkePrin = RemoveFirstWord(text, 4);
-                            }
-                            cb6.IsChecked = true;
-                            AddData(11, RemoveFirstWord(text, 4));
-                            boolTovarKDostavkePrin = true;
-                        }
-                    }
-                    if (boolPoDoverenn == false)
-                    {
-                        string text = string.Join("", listOfRows[i]);
-                        var data = ExtractData(text);
-                        if (data.powerOfAttorney != null)
-                        {
-                            if (data.powerOfAttorney.Length != 0)
-                            {
-                                if (documentV != null)
-                                {
-                                    documentV.PoDover = data.powerOfAttorney;
-                                }
-                                cb6.IsChecked = true;
-                                AddData(12, data.powerOfAttorney);
-                                boolPoDoverenn = true;
-                            }
-                        }
-                    }
-                    if (boolDoverennVidana == false)
-                    {
-                        string text = string.Join("", listOfRows[i]);
-                        var data = ExtractData(text);
-                        if (data.issuedBy != null)
-                        {
-                            if (data.issuedBy.Length != 0)
-                            {
-                                if (documentV != null)
-                                {
-                                    documentV.Vidannoi = data.issuedBy;
-                                }
-                                cb6.IsChecked = true;
-                                AddData(13, data.issuedBy);
-                                boolDoverennVidana = true;
-                            }
-                        }
-                    }
-                    if (boolTOVARNRAZDEL == false)
-                    {
-                        string text = string.Join("", listOfRows[i]);
-                        if (text.IndexOf("ТОВАРНЫЙ", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("РАЗДЕЛ", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            //MessageBox.Show("!!!");
-                            AddData(14, null);
-                            cb5.IsChecked = true;
-                            if (tables.Count != 0)
-                            {           
-                                if (tables[0] != null)
-                                {
-                                    bool p = false;
-                                    for (int l = 0; l < tables[0].KORDy.Count - 1; l++)
-                                    {
-                                        System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[0], tables[0].KORDy[l]); // Верхний левый угол
-                                        System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[1], tables[0].KORDy[l + 1]); // Нижний правый угол
-
-                                        using (Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png")))
-                                        {
-                                            System.Drawing.Rectangle cropArea = GetCropArea(topLeft, bottomRight);
-                                            using (Bitmap croppedImage = CropImage(originalImage, cropArea))
-                                            {
-                                                string tx = ExtractTextFromImage(croppedImage);
-                                                if (tx.IndexOf("№", StringComparison.OrdinalIgnoreCase) >= 0 || (tx.IndexOf("N", StringComparison.OrdinalIgnoreCase) >= 0))
-                                                {
-                                                    p = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }//проверка первого столбца
-                                    if (p == false)
-                                    {
-                                        for (int l = 2; l < tables[0].KORDy.Count - 1; l++)
-                                        {
-                                            DataRazdel1 razd = new DataRazdel1();
-                                            string tx = null;
-                                            for (int n = 0; n < tables[0].KORDx.Count - 1; n++)
-                                            {
-                                                System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[n] + 5, tables[0].KORDy[l] + 5); // Верхний левый угол
-                                                System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[n + 1] - 5, tables[0].KORDy[l + 1] - 5); // Нижний правый угол
-
-                                                if (tables[0].KORDx[n] == tables[0].KORDx[n + 1])
-                                                {
-                                                    tables[0].KORDx.Remove(tables[0].KORDx[n]);
-                                                    n--;
-                                                    continue;
-                                                }
-
-                                                using (Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png")))
-                                                {
-                                                    System.Drawing.Rectangle cropArea = GetCropArea(topLeft, bottomRight);
-                                                    using (Bitmap croppedImage = CropImage(originalImage, cropArea))
-                                                    {
-                                                        tx = ExtractTextFromImage(croppedImage);
-                                                        tx = CleanString(tx);
-                                                        switch (n)
-                                                        {
-                                                            case 0:
-                                                                razd.НаименованиеТовара = tx;
-                                                                break;
-                                                            case 1:
-                                                                razd.ЕдиницаИзмерения = tx;
-                                                                break;
-                                                            case 2:
-                                                                if(string.IsNullOrWhiteSpace(tx))
-                                                                {
-                                                                    tx = "1";
-                                                                }
-                                                                //MessageBox.Show(tx);
-                                                                razd.Количество = tx;
-                                                                break;
-                                                            case 3:
-                                                                razd.Цена = tx;
-                                                                break;
-                                                            case 4:
-                                                                razd.Стоимость = tx;
-                                                                break;
-                                                            case 5:
-                                                                razd.СтавкаНДС = tx;
-                                                                break;
-                                                            case 6:
-                                                                razd.СуммаНДС = tx;
-                                                                break;
-                                                            case 7:
-                                                                razd.СтоимостьСНДС = tx;
-                                                                break;
-                                                            case 8:
-                                                                razd.Примечание = tx;
-                                                                break;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            items.Add(razd);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        for (int l = 2; l < tables[0].KORDy.Count - 1; l++)
-                                        {
-                                            DataRazdel1 razd = new DataRazdel1();
-                                            string tx = null;
-                                            for (int n = 1; n < tables[0].KORDx.Count - 1; n++)
-                                            {
-                                                System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[n] + 5, tables[0].KORDy[l] + 5); // Верхний левый угол
-                                                System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[n + 1] - 5, tables[0].KORDy[l + 1] - 5); // Нижний правый угол
-                                                if (tables[0].KORDx[n] == tables[0].KORDx[n + 1])
-                                                {
-                                                    tables[0].KORDx.Remove(tables[0].KORDx[n]);
-                                                    n--;
-                                                    continue;
-                                                }
-                                                using (Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png")))
-                                                {
-                                                    System.Drawing.Rectangle cropArea = GetCropArea(topLeft, bottomRight);
-                                                    using (Bitmap croppedImage = CropImage(originalImage, cropArea))
-                                                    {
-                                                        tx = ExtractTextFromImage(croppedImage);
-                                                        tx = CleanString(tx);
-                                                        //MessageBox.Show(tx + "\n" + n);
-                                                        switch (n)
-                                                        {
-                                                            case 1:
-                                                                razd.НаименованиеТовара = tx;
-                                                                break;
-                                                            case 2:
-                                                                razd.ЕдиницаИзмерения = tx;
-                                                                break;
-                                                            case 3:
-                                                                if (string.IsNullOrWhiteSpace(tx))
-                                                                {
-                                                                    tx = "1";
-                                                                }
-                                                                //MessageBox.Show(tx);
-                                                                razd.Количество = tx;
-                                                                break;
-                                                            case 4:
-                                                                razd.Цена = tx;
-                                                                break;
-                                                            case 5:
-                                                                razd.Стоимость = tx;
-                                                                break;
-                                                            case 6:
-                                                                razd.СтавкаНДС = tx;
-                                                                break;
-                                                            case 7:
-                                                                razd.СуммаНДС = tx;
-                                                                break;
-                                                            case 8:
-                                                                razd.СтоимостьСНДС = tx;
-                                                                break;
-                                                            case 9:
-                                                                razd.Примечание = tx;
-                                                                break;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            items.Add(razd);
-                                        }
-                                    }
-                                }
-                            }
-                            boolTOVARNRAZDEL = true;
-                        }                        
-                    }                    
-                }
-            }
-
-            //using (StreamWriter writer = new StreamWriter("M://info.txt", false, Encoding.UTF8))
-            //{
-            //    foreach (var row in listOfRows)
-            //    {
-            //        string line = string.Join("", row);
-            //        writer.WriteLine(line);
-            //    }
-            //}
-
             if(grid.Count != 0)
             {
-                buttonExcel.IsEnabled = true;
+                for(int i = 0; i < grid.Count; i++)
+                {
+                    MainStackPanel.Children.Remove(grid[i]);
+                }                
             }
+            grid.Clear();
+            if (documentV != null)
+            {
+                documentV = null;
+                documentV = new DocumentVertical();
+            }
+            tables.Clear();
+            tables = new List<Tables>();
+            lineCoordinates.Clear();
+            lineCoordinates = new List<Tuple<int, int, int, int>>();
+
+            if (items.Count != 0)
+            {
+                items.Clear();
+                items = new List<DataRazdel1>();
+            }
+            System.IO.Directory.CreateDirectory(@"ConvertedImages");
+            string outputDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "ConvertedImages");
+
+
+            await Task.Run(() =>
+            {
+                
+                bool isChecked = false;
+                Dispatcher.Invoke(() => isChecked = checkFilter.IsChecked == true);
+                Dispatcher.Invoke(() => progressBar.Value = 5);
+                Dispatcher.Invoke(() => buttonScan.IsEnabled = false);
+
+                Filter filter = new Filter(ochist);
+                filter.FilterWhite(pathfile, outputDirectory);
+
+                Dispatcher.Invoke(() => progressBar.Value = 15);
+
+                List<string> rows = new List<string>();
+                List<List<string>> listOfRows = new List<List<string>>();
+
+                bool tablecheck = false;
+
+                using (var engine = new TesseractEngine(@"D:\Programm\editor\Tesseract-OCR\tessdata", "eng+rus", EngineMode.Default))
+                {
+                    using (var image = Pix.LoadFromFile(Path.Combine(outputDirectory, $"doc1.png")))
+                    {
+                        using (var page = engine.Process(image, PageSegMode.Auto))
+                        {
+                            using (var package = new ExcelPackage())
+                            {
+                                using (var iterator = page.GetIterator())
+                                {
+                                    iterator.Begin();
+                                    int row = 1;
+                                    double MaxX = 0;
+                                    double MaxY = 0;
+                                    int nRow = 1;
+                                    Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png"));
+                                    Bitmap copiedImage = new Bitmap(originalImage.Width, originalImage.Height);
+
+                                    int width = originalImage.Width;
+                                    int height = originalImage.Height;
+
+                                    if (width > height)
+                                    {
+                                        vertical = false;
+                                    }
+                                    else if (height > width)
+                                    {
+                                        vertical = true;
+                                        documentV = new DocumentVertical();
+                                    }
+
+                                    do
+                                    {
+                                        string currentWord = iterator.GetText(PageIteratorLevel.Word);
+                                        iterator.TryGetBoundingBox(PageIteratorLevel.Word, out Tesseract.Rect bounds);
+                                        string text = string.Join("", rows);
+                                        if (text.IndexOf("ТОВАРНЫЙ", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("РАЗДЕЛ", StringComparison.OrdinalIgnoreCase) >= 0)
+                                        {
+                                            tablecheck = true;
+                                        }
+                                        if (tablecheck == true)
+                                        {
+                                            ScanTable(currentWord, bounds);
+                                        }
+                                        if (currentWord == "|")
+                                        {
+                                            currentWord = null;
+                                        }
+                                        if (bounds.X1 < MaxX)
+                                        {
+                                            MaxX = bounds.X1;
+                                            nRow++;
+                                            rows = new List<string>();
+                                        }
+                                        else if (Math.Abs((float)((bounds.Y1 + bounds.Y2) / 2) - MaxY) > 200)
+                                        {
+                                            MaxY = (float)((bounds.Y1 + bounds.Y2) / 2);
+                                            nRow++;
+                                            rows = new List<string>();
+                                        }
+                                        else
+                                        {
+                                            MaxX = bounds.X1;
+                                            MaxY = (float)((bounds.Y1 + bounds.Y2) / 2);
+                                        }
+                                        rows.Add(" " + currentWord);
+                                        if (listOfRows.Count != nRow)
+                                        {
+                                            listOfRows.Add(rows);
+                                        }
+                                        else
+                                        {
+                                            listOfRows[nRow - 1] = rows;
+                                        }
+                                        if (1 > 1)
+                                        {
+                                            DebugTesseractZone(currentWord, originalImage, bounds, copiedImage);
+                                        }
+                                        row++;
+                                    } while (iterator.Next(PageIteratorLevel.Word));
+                                    copiedImage.Save(Path.Combine(outputDirectory, $"doc2.png"));
+                                    originalImage.Dispose();
+                                    copiedImage.Dispose();
+                                }
+                                //package.SaveAs(new FileInfo(excelFilePath));
+                            }
+                        }
+                    }
+                }
+                Dispatcher.Invoke(() => progressBar.Value = 50);
+                bool boolDateHead = false;
+                bool boolGruzootpav = false;
+                bool boolGruzopoluch = false;
+                bool boolOsnovanOtpusk = false;
+                bool boolVsegoSummaNDS = false;
+                bool boolVsegoStoimostSNDS = false;
+                bool boolOtpuskRazreshil = false;
+                bool boolSdalGruzootpravit = false;
+                bool boolTovarKDostavkePrin = false;
+                bool boolPoDoverenn = false;
+                bool boolDoverennVidana = false;
+                bool boolTOVARNRAZDEL = false;
+
+                DetermineEdgeType(lineCoordinates);
+                //MessageBox.Show(tables.Count.ToString());
+                Bitmap originalImage2 = new Bitmap(Path.Combine(outputDirectory, $"doc1.png"));
+                Bitmap copiedImage2 = new Bitmap(originalImage2.Width, originalImage2.Height);
+
+                if (tables.Count > 0)
+                {
+                    foreach (var table in tables)
+                    {
+                        for (int i = table.KORDx[0]; i < table.KORDx[table.KORDx.Count - 1]; i++)
+                        {
+                            foreach (var y in table.KORDy)
+                            {
+                                copiedImage2.SetPixel(i, y, System.Drawing.Color.Yellow);
+                            }
+                        }
+                        for (int i = table.KORDy[0]; i < table.KORDy[table.KORDy.Count - 1]; i++)
+                        {
+                            foreach (var x in table.KORDx)
+                            {
+                                copiedImage2.SetPixel(x, i, System.Drawing.Color.Yellow);
+                            }
+                        }
+                    }
+                    foreach (var table in tables)
+                    {
+                        foreach (var x in table.KORDx)
+                        {
+                            foreach (var y in table.KORDy)
+                            {
+                                copiedImage2.SetPixel(x, y, System.Drawing.Color.White);
+                            }
+                        }
+                    }
+                }
+
+                copiedImage2.Save(Path.Combine(outputDirectory, $"doc3.png"));
+                originalImage2.Dispose();
+                copiedImage2.Dispose();
+                Dispatcher.Invoke(() => progressBar.Value = 65);
+                for (int i = 0; i < listOfRows.Count; i++)
+                {
+
+                    for (int j = 0; j < listOfRows[i].Count; j++)
+                    {
+                        string currentWord = listOfRows[i][j];
+
+                        if (currentWord.IndexOf("Грузоотправитель", StringComparison.OrdinalIgnoreCase) >= 0 && i < 8)
+                        {
+                            string data = null;
+                            foreach (var row in listOfRows)
+                            {
+                                string line = string.Join("", row);
+                                if (line.IndexOf("УНП", StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    string[] lineData = line.Split();
+                                    data = lineData[2];
+                                    Dispatcher.Invoke(() => cb1.IsChecked = true);
+                                    break;
+                                }
+                            }
+                            if (documentV != null)
+                            {
+                                documentV.GruzOtpr = data;
+                            }
+                            Dispatcher.Invoke(() => AddData(0, data));
+                        }
+                        if (currentWord.IndexOf("Грузополучатель", StringComparison.OrdinalIgnoreCase) >= 0 && i < 8)
+                        {
+                            string data = null;
+                            foreach (var row in listOfRows)
+                            {
+                                string line = string.Join("", row);
+                                if (line.IndexOf("УНП", StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    string[] lineData = line.Split();
+                                    data = lineData[3];
+                                    Dispatcher.Invoke(() => cb1.IsChecked = true);
+                                    break;
+                                }
+                            }
+                            if (documentV != null)
+                            {
+                                documentV.GruzPoluch = data;
+                            }
+                            Dispatcher.Invoke(() => AddData(1, data));
+                        }
+                        if (boolDateHead == false)
+                        {
+                            string pattern = @"\b\d{1,2}\s(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s\d{4}\b";
+                            Regex regex = new Regex(pattern, RegexOptions.IgnoreCase);
+                            Match match = regex.Match(string.Join("", listOfRows[i]));
+                            if (match.Success)
+                            {
+                                if (documentV != null)
+                                {
+                                    documentV.Date = match.Value;
+                                }
+                                Dispatcher.Invoke(() => AddData(3, match.Value));
+                                Dispatcher.Invoke(() => cb1.IsChecked = true);
+                                boolDateHead = true;
+                            }
+                        }
+                        if (boolGruzootpav == false)
+                        {
+                            string text = string.Join("", listOfRows[i]);
+                            List<string> textList = text.Split().ToList();
+                            for (int k = 0; k < textList.Count; k++)
+                            {
+                                if (textList[k] == " " || textList[k] == "")
+                                {
+                                    textList.Remove(textList[k]);
+                                }
+                            }
+                            if (currentWord.IndexOf("Грузоотправитель", StringComparison.OrdinalIgnoreCase) >= 0 && textList.Count > 4)
+                            {
+                                if (documentV != null)
+                                {
+                                    documentV.GruzOtprName = RemoveFirstWord(text, 1);
+                                }
+                                Dispatcher.Invoke(() => cb3.IsChecked = true);
+                                Dispatcher.Invoke(() => AddData(4, RemoveFirstWord(text, 1)));
+                                boolGruzootpav = true;
+                            }
+                        }
+                        if (boolGruzopoluch == false)
+                        {
+                            string text = string.Join("", listOfRows[i]);
+                            List<string> textList = text.Split().ToList();
+                            for (int k = 0; k < textList.Count; k++)
+                            {
+                                if (textList[k] == " " || textList[k] == "")
+                                {
+                                    textList.Remove(textList[k]);
+                                }
+                            }
+                            if (currentWord.IndexOf("Грузополучатель", StringComparison.OrdinalIgnoreCase) >= 0 && textList.Count > 4)
+                            {
+                                if (documentV != null)
+                                {
+                                    documentV.GruzPoluchName = RemoveFirstWord(text, 2);
+                                }
+                                Dispatcher.Invoke(() => cb3.IsChecked = true);
+                                Dispatcher.Invoke(() => AddData(5, RemoveFirstWord(text)));
+                                boolGruzopoluch = true;
+                            }
+                        }
+                        if (boolOsnovanOtpusk == false)
+                        {
+                            string text = string.Join("", listOfRows[i]);
+                            if (text.IndexOf("Основание", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("отпуска", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                if (documentV != null)
+                                {
+                                    documentV.OsnOtpusk = RemoveFirstWord(text, 2);
+                                }
+                                Dispatcher.Invoke(() => cb3.IsChecked = true);
+                                Dispatcher.Invoke(() => AddData(6, RemoveFirstWord(text, 2)));
+                                boolOsnovanOtpusk = true;
+                            }
+                        }
+                        if (boolVsegoSummaNDS == false)
+                        {
+                            string text = string.Join("", listOfRows[i]);
+                            if (text.IndexOf("Всего", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("сумма", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("НДС", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                if (documentV != null)
+                                {
+                                    documentV.VsegoSummNDS = RemoveFirstWord(text, 3);
+                                }
+                                Dispatcher.Invoke(() => cb6.IsChecked = true);
+                                Dispatcher.Invoke(() => AddData(7, RemoveFirstWord(text, 3)));
+                                boolVsegoSummaNDS = true;
+                            }
+                        }
+                        if (boolVsegoStoimostSNDS == false)
+                        {
+                            string text = string.Join("", listOfRows[i]);
+                            if (text.IndexOf("Всего", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("стоимость", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("с", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("НДС", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                if (documentV != null)
+                                {
+                                    documentV.VsegoStoimSNDS = RemoveFirstWord(text, 4);
+                                }
+                                Dispatcher.Invoke(() => cb6.IsChecked = true);
+                                Dispatcher.Invoke(() => AddData(8, RemoveFirstWord(text, 4)));
+                                boolVsegoStoimostSNDS = true;
+                            }
+                        }
+                        if (boolOtpuskRazreshil == false)
+                        {
+                            string text = string.Join("", listOfRows[i]);
+                            if (text.IndexOf("Отпуск", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("разрешил", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                if (documentV != null)
+                                {
+                                    documentV.OtpuskRazresh = RemoveFirstWord(text, 2);
+                                }
+                                Dispatcher.Invoke(() => cb6.IsChecked = true);
+                                Dispatcher.Invoke(() => AddData(9, RemoveFirstWord(text, 2)));
+                                boolOtpuskRazreshil = true;
+                            }
+                        }
+                        if (boolSdalGruzootpravit == false)
+                        {
+                            string text = string.Join("", listOfRows[i]);
+                            if (text.IndexOf("Сдал", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("Грузоотправитель", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                if (documentV != null)
+                                {
+                                    documentV.SdalGruzootpav = RemoveFirstWord(text, 2);
+                                }
+                                Dispatcher.Invoke(() => cb6.IsChecked = true);
+                                Dispatcher.Invoke(() => AddData(10, RemoveFirstWord(text, 2)));
+                                boolSdalGruzootpravit = true;
+                            }
+                        }
+                        if (boolTovarKDostavkePrin == false)
+                        {
+                            string text = string.Join("", listOfRows[i]);
+                            if (text.IndexOf("Товар", StringComparison.OrdinalIgnoreCase) >= 0
+                                && text.IndexOf("к", StringComparison.OrdinalIgnoreCase) >= 0
+                                && (text.IndexOf("доставке", StringComparison.OrdinalIgnoreCase) >= 0) || text.IndexOf("перевозке", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                if (documentV != null)
+                                {
+                                    documentV.TovarKPerevozkePrin = RemoveFirstWord(text, 4);
+                                }
+                                Dispatcher.Invoke(() => cb6.IsChecked = true);
+                                Dispatcher.Invoke(() => AddData(11, RemoveFirstWord(text, 4)));
+                                boolTovarKDostavkePrin = true;
+                            }
+                        }
+                        if (boolPoDoverenn == false)
+                        {
+                            string text = string.Join("", listOfRows[i]);
+                            var data = ExtractData(text);
+                            if (data.powerOfAttorney != null)
+                            {
+                                if (data.powerOfAttorney.Length != 0)
+                                {
+                                    if (documentV != null)
+                                    {
+                                        documentV.PoDover = data.powerOfAttorney;
+                                    }
+                                    Dispatcher.Invoke(() => cb6.IsChecked = true);
+                                    Dispatcher.Invoke(() => AddData(12, data.powerOfAttorney));
+                                    boolPoDoverenn = true;
+                                }
+                            }
+                        }
+                        if (boolDoverennVidana == false)
+                        {
+                            string text = string.Join("", listOfRows[i]);
+                            var data = ExtractData(text);
+                            if (data.issuedBy != null)
+                            {
+                                if (data.issuedBy.Length != 0)
+                                {
+                                    if (documentV != null)
+                                    {
+                                        documentV.Vidannoi = data.issuedBy;
+                                    }
+                                    Dispatcher.Invoke(() => cb6.IsChecked = true);
+                                    Dispatcher.Invoke(() => AddData(13, data.issuedBy));
+                                    boolDoverennVidana = true;
+                                }
+                            }
+                        }
+                        if (boolTOVARNRAZDEL == false)
+                        {
+                            string text = string.Join("", listOfRows[i]);
+                            if (text.IndexOf("ТОВАРНЫЙ", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("РАЗДЕЛ", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                //MessageBox.Show("!!!");
+                                Dispatcher.Invoke(() => AddData(14, null));
+                                Dispatcher.Invoke(() => cb5.IsChecked = true);
+                                if (tables.Count != 0)
+                                {
+                                    if (tables[0] != null)
+                                    {
+                                        bool p = false;
+                                        for (int l = 0; l < tables[0].KORDy.Count - 1; l++)
+                                        {
+                                            System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[0], tables[0].KORDy[l]); // Верхний левый угол
+                                            System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[1], tables[0].KORDy[l + 1]); // Нижний правый угол
+
+                                            using (Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png")))
+                                            {
+                                                System.Drawing.Rectangle cropArea = GetCropArea(topLeft, bottomRight);
+                                                using (Bitmap croppedImage = CropImage(originalImage, cropArea))
+                                                {
+                                                    string tx = ExtractTextFromImage(croppedImage);
+                                                    if (tx.IndexOf("№", StringComparison.OrdinalIgnoreCase) >= 0 || (tx.IndexOf("N", StringComparison.OrdinalIgnoreCase) >= 0))
+                                                    {
+                                                        p = true;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }//проверка первого столбца
+                                        if (p == false)
+                                        {
+                                            for (int l = 2; l < tables[0].KORDy.Count - 1; l++)
+                                            {
+                                                DataRazdel1 razd = new DataRazdel1();
+                                                string tx = null;
+                                                for (int n = 0; n < tables[0].KORDx.Count - 1; n++)
+                                                {
+                                                    System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[n] + 5, tables[0].KORDy[l] + 5); // Верхний левый угол
+                                                    System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[n + 1] - 5, tables[0].KORDy[l + 1] - 5); // Нижний правый угол
+
+                                                    if (tables[0].KORDx[n] == tables[0].KORDx[n + 1])
+                                                    {
+                                                        tables[0].KORDx.Remove(tables[0].KORDx[n]);
+                                                        n--;
+                                                        continue;
+                                                    }
+
+                                                    using (Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png")))
+                                                    {
+                                                        System.Drawing.Rectangle cropArea = GetCropArea(topLeft, bottomRight);
+                                                        using (Bitmap croppedImage = CropImage(originalImage, cropArea))
+                                                        {
+                                                            tx = ExtractTextFromImage(croppedImage);
+                                                            tx = CleanString(tx);
+                                                            switch (n)
+                                                            {
+                                                                case 0:
+                                                                    razd.НаименованиеТовара = tx;
+                                                                    break;
+                                                                case 1:
+                                                                    razd.ЕдиницаИзмерения = tx;
+                                                                    break;
+                                                                case 2:
+                                                                    if (string.IsNullOrWhiteSpace(tx))
+                                                                    {
+                                                                        tx = "1";
+                                                                    }
+                                                                    //MessageBox.Show(tx);
+                                                                    razd.Количество = tx;
+                                                                    break;
+                                                                case 3:
+                                                                    razd.Цена = tx;
+                                                                    break;
+                                                                case 4:
+                                                                    razd.Стоимость = tx;
+                                                                    break;
+                                                                case 5:
+                                                                    razd.СтавкаНДС = tx;
+                                                                    break;
+                                                                case 6:
+                                                                    razd.СуммаНДС = tx;
+                                                                    break;
+                                                                case 7:
+                                                                    razd.СтоимостьСНДС = tx;
+                                                                    break;
+                                                                case 8:
+                                                                    razd.Примечание = tx;
+                                                                    break;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                items.Add(razd);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            for (int l = 2; l < tables[0].KORDy.Count - 1; l++)
+                                            {
+                                                DataRazdel1 razd = new DataRazdel1();
+                                                string tx = null;
+                                                for (int n = 1; n < tables[0].KORDx.Count - 1; n++)
+                                                {
+                                                    System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[n] + 5, tables[0].KORDy[l] + 5); // Верхний левый угол
+                                                    System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[n + 1] - 5, tables[0].KORDy[l + 1] - 5); // Нижний правый угол
+                                                    if (tables[0].KORDx[n] == tables[0].KORDx[n + 1])
+                                                    {
+                                                        tables[0].KORDx.Remove(tables[0].KORDx[n]);
+                                                        n--;
+                                                        continue;
+                                                    }
+                                                    using (Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png")))
+                                                    {
+                                                        System.Drawing.Rectangle cropArea = GetCropArea(topLeft, bottomRight);
+                                                        using (Bitmap croppedImage = CropImage(originalImage, cropArea))
+                                                        {
+                                                            tx = ExtractTextFromImage(croppedImage);
+                                                            tx = CleanString(tx);
+                                                            //MessageBox.Show(tx + "\n" + n);
+                                                            switch (n)
+                                                            {
+                                                                case 1:
+                                                                    razd.НаименованиеТовара = tx;
+                                                                    break;
+                                                                case 2:
+                                                                    razd.ЕдиницаИзмерения = tx;
+                                                                    break;
+                                                                case 3:
+                                                                    if (string.IsNullOrWhiteSpace(tx))
+                                                                    {
+                                                                        tx = "1";
+                                                                    }
+                                                                    //MessageBox.Show(tx);
+                                                                    razd.Количество = tx;
+                                                                    break;
+                                                                case 4:
+                                                                    razd.Цена = tx;
+                                                                    break;
+                                                                case 5:
+                                                                    razd.Стоимость = tx;
+                                                                    break;
+                                                                case 6:
+                                                                    razd.СтавкаНДС = tx;
+                                                                    break;
+                                                                case 7:
+                                                                    razd.СуммаНДС = tx;
+                                                                    break;
+                                                                case 8:
+                                                                    razd.СтоимостьСНДС = tx;
+                                                                    break;
+                                                                case 9:
+                                                                    razd.Примечание = tx;
+                                                                    break;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                items.Add(razd);
+                                            }
+                                        }
+                                    }
+                                }
+                                boolTOVARNRAZDEL = true;
+                            }
+                        }
+                    }
+                }
+
+                //using (StreamWriter writer = new StreamWriter("M://info.txt", false, Encoding.UTF8))
+                //{
+                //    foreach (var row in listOfRows)
+                //    {
+                //        string line = string.Join("", row);
+                //        writer.WriteLine(line);
+                //    }
+                //}
+                Dispatcher.Invoke(() => progressBar.Value = 90);
+                if (grid.Count != 0)
+                {
+                    Dispatcher.Invoke(() => buttonExcel.IsEnabled = true);
+                    Dispatcher.Invoke(() => buttonXML.IsEnabled = true);
+                }
+                Dispatcher.Invoke(() => progressBar.Value = 100);
+                if (documentV != null)
+                {
+                    bool checkExcel = false;
+                    Dispatcher.Invoke(() => checkExcel = fastExcel.IsChecked == true);
+                    if (checkExcel)
+                    {
+                        Dispatcher.Invoke(() => progressBar.Value = 80);
+                        Dispatcher.Invoke(() => buttonExcel_Click(null, null));
+                    }                    
+                }
+                Dispatcher.Invoke(() => progressBar.Value = 100);
+                Dispatcher.Invoke(() => buttonScan.IsEnabled = true);
+            });
         }
         public static string CleanString(string input)
         {
@@ -966,7 +1016,7 @@ namespace TTN
                 g.DrawImage(original, new System.Drawing.Rectangle(0, 0, croppedImage.Width, croppedImage.Height), cropArea, GraphicsUnit.Pixel);
             }
             string outputDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "ConvertedImages");
-            
+
             // Размеры нового изображения с учетом добавленных границ
             int newWidth = croppedImage.Width + 2 * 30;
             int newHeight = croppedImage.Height + 2 * 30;
@@ -1055,6 +1105,7 @@ namespace TTN
             if (grid.Count == 0)
             {
                 buttonExcel.IsEnabled = false;
+                buttonXML.IsEnabled = false;
             }
         }
         private T FindParent<T>(DependencyObject child) where T : DependencyObject
@@ -1146,10 +1197,13 @@ namespace TTN
             border.Margin = new Thickness(44, 0, 44, 0);
             border.Height = 104;
             border.VerticalAlignment = System.Windows.VerticalAlignment.Center;
+            border.Name = "dataPrefabBorder";
             Grid innerGrid = new Grid();
             innerGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(31, GridUnitType.Star) });
             innerGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(71, GridUnitType.Star) });
+            innerGrid.Name = "dataPrefabGrid";
             TextBox textBox = new TextBox();
+            textBox.Name = "TextBox";
             textBox.Text = data;
             textBox.Margin = new Thickness(21, 25, 21, 17);
             textBox.TextWrapping = TextWrapping.Wrap;
@@ -1343,13 +1397,27 @@ namespace TTN
 
         private void buttonExcel_Click(object sender, RoutedEventArgs e)
         {
-            if(documentV != null)
+            if (documentV != null)
             {
                 documentV.table1 = items;
                 documentV.ConvertToExcel(this);
                 Process.Start(new ProcessStartInfo(@"Exits\file.xlsx") { UseShellExecute = true });
                 Process.Start("explorer.exe", @"Exits");
             }
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            if (documentV != null)
+            {
+                documentV.table1 = items;
+                documentV.ConvertToXML(this);
+            }
+        }
+
+        private async void buttonScan_Click(object sender, RoutedEventArgs e)
+        {
+            await Scan();
         }
     }
 }

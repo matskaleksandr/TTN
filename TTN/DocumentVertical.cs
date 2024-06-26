@@ -10,6 +10,9 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows;
 using static TTN.Table;
+using System.Windows.Media;
+using System.Xml.Linq;
+using Aspose.Pdf;
 
 namespace TTN
 {
@@ -18,6 +21,7 @@ namespace TTN
         //данные
         public string GruzOtpr = "";                                  //УНП грузоотправитель
         public string GruzPoluch = "";                                //УНП грузополучатель
+        public string Zakazchik = "";                                 //УНП заказчик
 
         public string Date = "";                                      //Дата
 
@@ -90,6 +94,201 @@ namespace TTN
 
         public int globalRow = 1;
 
+        public void ConvertToXML(MainWindow main)
+        {
+            string sXML = "";
+            UpdateGrid(main);
+            XElement xml = ToXElement();
+            sXML = xml.ToString();            
+            if (System.IO.File.Exists(@"Exits"))
+            {
+                System.IO.Directory.CreateDirectory(@"Exits");
+            }
+            xml.Save(@"Exits/document.xml");
+            XMLInfo xmlW = new XMLInfo(sXML);
+            xmlW.Show();
+        }
+
+        public XElement ToXElement()
+        {
+            XElement xElement = new XElement("TovarnRazdel");
+            if (table1.Count > 0)
+            {
+                for (int i = 0; i < table1.Count; i++)
+                {
+                    XElement xElementN = new XElement("row" + i.ToString());
+                    xElementN.Add(new XElement("НаименованиеТовара", table1[i].НаименованиеТовара));
+                    xElementN.Add(new XElement("ЕдиницаИзмерения", table1[i].ЕдиницаИзмерения));
+                    xElementN.Add(new XElement("Количество", table1[i].Количество));
+                    xElementN.Add(new XElement("Цена", table1[i].Цена));
+                    xElementN.Add(new XElement("Стоимость", table1[i].Стоимость));
+                    xElementN.Add(new XElement("СтавкаНДС", table1[i].СтавкаНДС));
+                    xElementN.Add(new XElement("СуммаНДС", table1[i].СуммаНДС));
+                    xElementN.Add(new XElement("СтоимостьСНДС", table1[i].СтоимостьСНДС));
+                    xElementN.Add(new XElement("Примечание", table1[i].Примечание));
+                    xElement.Add(xElementN);
+                }
+                
+            }
+
+            return new XElement("Document",
+                new XElement("ShapkaYNPDate",
+                    new XElement("GruzOtpr", GruzOtpr),
+                    new XElement("GruzPoluch", GruzPoluch),
+                    new XElement("Zakazchik", Zakazchik),
+                    new XElement("Date", Date)
+                ),
+                new XElement("AutoInfo",
+                    new XElement("Avto", Avto),
+                    new XElement("Pricep", Pricep),
+                    new XElement("KPutList", KPutList),
+                    new XElement("Voditel", Voditel),
+                    new XElement("ZakazchikPerevozki", ZakazchikPerevozki)
+                ),
+                new XElement("GruzootpravitIOtpusk",
+                    new XElement("GruzOtprName", GruzOtprName),
+                    new XElement("GruzPoluchName", GruzPoluchName),
+                    new XElement("OsnOtpusk", OsnOtpusk)
+                ),
+                new XElement("PunktPogruzk",
+                    new XElement("PunktPogruzk", PunktPogruzk),
+                    new XElement("PunktRazgruzki", PunktRazgruzki),
+                    new XElement("Pereadresovka", Pereadresovka)
+                ),
+                new XElement("StoimostIStoroni",
+                    new XElement("VsegoSummNDS", VsegoSummNDS),
+                    new XElement("VsegoSummNDSKop", VsegoSummNDSKop),
+                    new XElement("VsegoStoimSNDS", VsegoStoimSNDS),
+                    new XElement("VsegoStoimSNDSKop", VsegoStoimSNDSKop),
+                    new XElement("VsegoMassGruz", VsegoMassGruz),
+                    new XElement("OtpuskRazresh", OtpuskRazresh),
+                    new XElement("SdalGruzootpav", SdalGruzootpav),
+                    new XElement("NoPlomb", NoPlomb),
+                    new XElement("VsegoKolGruzMest", VsegoKolGruzMest),
+                    new XElement("TovarKPerevozkePrin", TovarKPerevozkePrin),
+                    new XElement("PoDover", PoDover),
+                    new XElement("Vidannoi", Vidannoi),
+                    new XElement("PrinGruzopoluch", PrinGruzopoluch),
+                    new XElement("NoPlomb2", NoPlomb2),
+                    xElement
+                )
+            );
+        }
+
+        private T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            if (parent == null) return null;
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+                if (child != null && child is T)
+                {
+                    return (T)child;
+                }
+                else
+                {
+                    T childOfChild = FindVisualChild<T>(child);
+                    if (childOfChild != null)
+                    {
+                        return childOfChild;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public void UpdateGrid(MainWindow main)
+        {
+            GruzOtpr = "";
+            GruzPoluch = "";
+            Zakazchik = "";
+            Date = "";
+            Avto = "";
+            Pricep = "";
+            KPutList = "";
+            Voditel = "";
+            ZakazchikPerevozki = "";
+            GruzOtprName = "";
+            GruzPoluchName = "";
+            OsnOtpusk = "";
+            PunktPogruzk = "";
+            PunktRazgruzki = "";
+            Pereadresovka = "";
+            VsegoSummNDS = "";
+            VsegoSummNDSKop = "";
+            VsegoStoimSNDS = "";
+            VsegoStoimSNDSKop = "";
+            VsegoMassGruz = "";
+            OtpuskRazresh = "";
+            SdalGruzootpav = "";
+            NoPlomb = "";
+            VsegoKolGruzMest = "";
+            TovarKPerevozkePrin = "";
+            PoDover = "";
+            Vidannoi = "";
+            PrinGruzopoluch = "";
+            NoPlomb2 = "";
+            
+            // Найти ComboBox по имени
+            for(int i = 0; i < main.grid.Count; i++)
+            {
+                System.Windows.Controls.Border borderPref = FindVisualChild<System.Windows.Controls.Border>(main.grid[i]);
+                ///////////////
+                Grid defGrid = FindVisualChild<Grid>(borderPref);
+                //////////////
+                ComboBox comboBoxDataTypes = FindVisualChild<ComboBox>(defGrid);
+                TextBox textBox = FindVisualChild<TextBox>(defGrid);
+                //MessageBox.Show(textBox.Text);
+
+                switch (comboBoxDataTypes.SelectedIndex)
+                {
+                    case 0:
+                        GruzOtpr = textBox.Text;
+                        break;
+                    case 1:
+                        GruzPoluch = textBox.Text;
+                        break;
+                    case 2:
+                        Zakazchik = textBox.Text;
+                        break;
+                    case 3:
+                        Date = textBox.Text;
+                        break;
+                    case 4:
+                        GruzOtprName = textBox.Text;
+                        break;
+                    case 5:
+                        GruzPoluchName = textBox.Text;
+                        break;
+                    case 6:
+                        OsnOtpusk = textBox.Text;
+                        break;
+                    case 7:
+                        VsegoSummNDS = textBox.Text;
+                        break;
+                    case 8:
+                        VsegoStoimSNDS = textBox.Text;
+                        break;
+                    case 9:
+                        OtpuskRazresh = textBox.Text;
+                        break;
+                    case 10:
+                        SdalGruzootpav = textBox.Text;
+                        break;
+                    case 11:
+                        TovarKPerevozkePrin = textBox.Text;
+                        break;
+                    case 12:
+                        PoDover = textBox.Text;
+                        break;
+                    case 13:
+                        Vidannoi = textBox.Text;
+                        break;
+                }
+            }
+        }
+
         public void CopyTable(int startRowForSecondTable, string filePath1 = "", string filePath2 = "", string outputPath = @"ExcelVertical\file1.xlsx")
         {
             using (var package1 = new ExcelPackage(new FileInfo(filePath1)))
@@ -159,6 +358,7 @@ namespace TTN
         public void ConvertToExcel(MainWindow main)
         {
             globalRow = 1;
+            UpdateGrid(main);
             string filePath1 = "";
             string filePath2 = "";
             string outputPath = @"ExcelVertical\file1.xlsx";

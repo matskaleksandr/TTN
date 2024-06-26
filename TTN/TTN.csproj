@@ -181,6 +181,9 @@
       <DependentUpon>Table.xaml</DependentUpon>
     </Compile>
     <Compile Include="Tables.cs" />
+    <Compile Include="XMLInfo.xaml.cs">
+      <DependentUpon>XMLInfo.xaml</DependentUpon>
+    </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -196,6 +199,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Table.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="XMLInfo.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
