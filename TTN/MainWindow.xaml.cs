@@ -2,31 +2,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using Tesseract;
 using OfficeOpenXml;
 using System.IO;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
-using DuoVia.FuzzyStrings;
-
-
 using System.Text.RegularExpressions;
-using System.Windows.Markup;
-using Aspose.Pdf;
-using System.Windows.Media.TextFormatting;
-using System.Reflection.Emit;
-using Aspose.Pdf.Vector;
+
 using static TTN.Table;
 
 namespace TTN
@@ -34,9 +22,7 @@ namespace TTN
     public partial class MainWindow : Window
     {
         public string pathfile;
-        public string excelFilePath = "результат.xlsx";
-        public string textt = "";
-        DocumentVertical documentV;
+        private DocumentVertical documentV;
         public bool vertical;
         public ImageBrush imgDelete;
         public List<string> typesData = new List<string>() {
@@ -59,16 +45,11 @@ namespace TTN
         public List<Grid> grid = new List<Grid>();
         Table tb = null;
         List<DataRazdel1> items = new List<DataRazdel1>();
-
-
-
-
         public MainWindow()
         {
             InitializeComponent();
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
             string exePath = AppDomain.CurrentDomain.BaseDirectory;
-            excelFilePath = System.IO.Path.Combine(exePath, excelFilePath);
             comboBoxDataTypes.ItemsSource = typesData;
             imgDelete = brush;
         }
@@ -84,141 +65,6 @@ namespace TTN
                 buttonXML.IsEnabled = true;
             }
         }
-
-
-        public void TesseractStart(object sender, RoutedEventArgs e)
-        {
-            Filter filter = new Filter(ochist);
-            string outputDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "ConvertedImages");
-            filter.FilterWhite(pathfile, outputDirectory);
-
-            using (var engine = new TesseractEngine(@"D:\Programm\editor\Tesseract-OCR\tessdata", "eng+rus", EngineMode.Default))
-            {
-                using (var image = Pix.LoadFromFile(Path.Combine(outputDirectory, $"doc1.png")))
-                {
-                    using (var page = engine.Process(image, PageSegMode.Auto))
-                    {
-                        using (var package = new ExcelPackage())
-                        {
-                            var worksheet = package.Workbook.Worksheets.Add("OCR Results");
-                            using (var iterator = page.GetIterator())
-                            {
-                                iterator.Begin();
-                                int row = 1;
-                                double MaxX = 0;
-                                int nRow = 1;
-                                int nColumn = 1;
-                                Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png"));
-                                Bitmap copiedImage = new Bitmap(originalImage.Width, originalImage.Height);
-
-                                int width = originalImage.Width;
-                                int height = originalImage.Height;
-
-                                if (width > height)
-                                {
-                                    vertical = false;
-                                }
-                                else if (height > width)
-                                {
-                                    vertical = true;
-                                    documentV = new DocumentVertical();
-                                }
-
-                                do
-                                {
-                                    string currentWord = iterator.GetText(PageIteratorLevel.Word);
-                                    iterator.TryGetBoundingBox(PageIteratorLevel.Word, out Tesseract.Rect bounds);
-
-                                    if (bounds.X1 < MaxX)
-                                    {
-                                        MaxX = bounds.X1;
-                                        nRow++;
-                                    }
-                                    else
-                                    {
-                                        MaxX = bounds.X1;
-                                    }
-
-
-
-                                    worksheet.Cells[nRow, nColumn].Value += " " + currentWord;
-                                    bool viv = false;
-
-                                    if (currentWord != null && currentWord.Length != 0 && currentWord != "" && currentWord != " " && viv == true)
-                                    {
-                                        for (int x = 0; x < originalImage.Width; x++)
-                                        {
-                                            for (int y = 0; y < originalImage.Height; y++)
-                                            {
-                                                if (x >= bounds.X1 && x <= bounds.X2 && (y == bounds.Y1 || y == bounds.Y2))
-                                                {
-                                                    System.Drawing.Color pixelColor = copiedImage.GetPixel(x, y);
-                                                    if (pixelColor != System.Drawing.Color.Green)
-                                                    {
-                                                        copiedImage.SetPixel(x, y, System.Drawing.Color.Red);
-                                                        //MessageBox.Show("");
-                                                    }
-                                                }
-                                                if (y >= bounds.Y1 && y <= bounds.Y2 && (x == bounds.X1 || x == bounds.X2))
-                                                {
-                                                    System.Drawing.Color pixelColor = copiedImage.GetPixel(x, y);
-                                                    if (pixelColor != System.Drawing.Color.Green)
-                                                    {
-                                                        copiedImage.SetPixel(x, y, System.Drawing.Color.Red);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if (currentWord == null || currentWord.Length == 0 || currentWord == "" || currentWord == " " && viv == true)
-                                    {
-                                        //MessageBox.Show($"X1{bounds.X1}, Y1{bounds.Y1}, X2{bounds.X2}, Y2{bounds.Y2}");
-                                        for (int x = 0; x < originalImage.Width; x++)
-                                        {
-                                            for (int y = 0; y < originalImage.Height; y++)
-                                            {
-                                                if (x >= bounds.X1 && x <= bounds.X2 && (y == bounds.Y1 || y == bounds.Y2))
-                                                {
-                                                    System.Drawing.Color pixelColor = copiedImage.GetPixel(x, y);
-                                                    if (pixelColor != System.Drawing.Color.Green)
-                                                    {
-                                                        copiedImage.SetPixel(x, y, System.Drawing.Color.Blue);
-                                                    }
-                                                }
-                                                if (y >= bounds.Y1 && y <= bounds.Y2 && (x == bounds.X1 || x == bounds.X2))
-                                                {
-                                                    System.Drawing.Color pixelColor = copiedImage.GetPixel(x, y);
-                                                    if (pixelColor != System.Drawing.Color.Green)
-                                                    {
-                                                        copiedImage.SetPixel(x, y, System.Drawing.Color.Blue);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    copiedImage.SetPixel(bounds.X1, bounds.Y1, System.Drawing.Color.Green);
-                                    copiedImage.SetPixel(bounds.X2, bounds.Y2, System.Drawing.Color.Green);
-                                    copiedImage.SetPixel(bounds.X1, bounds.Y2, System.Drawing.Color.Green);
-                                    copiedImage.SetPixel(bounds.X2, bounds.Y1, System.Drawing.Color.Green);
-                                    row++;
-                                } while (iterator.Next(PageIteratorLevel.Word));
-                                copiedImage.Save(Path.Combine(outputDirectory, $"doc2.png"));
-                                originalImage.Dispose();
-                                copiedImage.Dispose();
-                            }
-                            package.SaveAs(new FileInfo(excelFilePath));
-                        }
-                    }
-                }
-            }
-        }
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            Process.Start(excelFilePath);
-        }
-        //устаревший но работающий код/
-
-        //хороший код\
         public void OpenFileButton_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
@@ -1394,7 +1240,6 @@ namespace TTN
             ochist = !ochist;
             //MessageBox.Show(ochist.ToString());
         }
-
         private void buttonExcel_Click(object sender, RoutedEventArgs e)
         {
             if (documentV != null)
@@ -1405,7 +1250,6 @@ namespace TTN
                 Process.Start("explorer.exe", @"Exits");
             }
         }
-
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             if (documentV != null)
@@ -1414,7 +1258,6 @@ namespace TTN
                 documentV.ConvertToXML(this);
             }
         }
-
         private async void buttonScan_Click(object sender, RoutedEventArgs e)
         {
             await Scan();
