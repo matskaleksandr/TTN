@@ -262,9 +262,7 @@
                 <MenuItem Header="Сканировать" x:Name="menuButtonScan" IsEnabled="False"/>
                 <MenuItem Header="Выгрузить в Excel" IsEnabled="False"/>
             </MenuItem>
-            <MenuItem Header="Справка" Height="25" Width="58">
-                <MenuItem Header="Элементы"/>
-                <MenuItem Header="Помощь"/>
+            <MenuItem Header="Справка" Height="25" Width="58" Click="MenuItem_Click">
             </MenuItem>
         </Menu>
 

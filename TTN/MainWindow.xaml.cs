@@ -1262,5 +1262,11 @@ namespace TTN
         {
             await Scan();
         }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            Help helper = new Help();
+            helper.Show();
+        }
     }
 }
