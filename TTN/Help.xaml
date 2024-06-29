@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TTN"
         mc:Ignorable="d"
-        Title="Help" Height="900" Width="1600">
+        Title="Help" Height="900" Width="1600" Icon="/иконка.png">
     <Grid>
         <Image Source="/справка1.png">
 

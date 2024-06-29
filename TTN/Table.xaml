@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TTN"
         mc:Ignorable="d"
-        Title="Table" Height="600" Width="1020">
+        Title="Table" Height="600" Width="1020" Icon="/иконка.png">
     <Window.Resources>
         <Style x:Key="RoundedButtonStyle" TargetType="Button">
             <Setter Property="Foreground" Value="White"/>

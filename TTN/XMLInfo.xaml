@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TTN"
         mc:Ignorable="d"
-        Title="XMLInfo" Height="600" Width="1000" Background="Black">
+        Title="XMLInfo" Height="600" Width="1000" Background="Black" Icon="/иконка.png">
     <Grid>
         <TextBox x:Name="tCode" TextWrapping="Wrap" Text="TextBoxf" Background="#FF0A0A0A" Foreground="#FFFF8000" FontSize="24"/>
 

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TTN"
         mc:Ignorable="d"
-        Title="Распознователь накладных" Height="1080" Width="1920" WindowState="Maximized">
+        Title="Распознователь накладных" Height="1080" Width="1920" WindowState="Maximized" Icon="/иконка.png">
     <Window.Resources>
         <Style x:Key="LargeCheckBox" TargetType="CheckBox">
             <Setter Property="Template">

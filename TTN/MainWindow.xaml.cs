@@ -245,7 +245,7 @@ namespace TTN
 
                 bool tablecheck = false;
 
-                using (var engine = new TesseractEngine(@"D:\Programm\editor\Tesseract-OCR\tessdata", "eng+rus", EngineMode.Default))
+                using (var engine = new TesseractEngine(@"Tesseract-OCR\tessdata", "eng+rus", EngineMode.Default))
                 {
                     using (var image = Pix.LoadFromFile(Path.Combine(outputDirectory, $"doc1.png")))
                     {
@@ -843,7 +843,7 @@ namespace TTN
         }
         static string ExtractTextFromImage(Bitmap image)
         {
-            using (var engine = new TesseractEngine(@"D:\Programm\editor\Tesseract-OCR\tessdata", "eng+rus", EngineMode.Default))
+            using (var engine = new TesseractEngine(@"Tesseract-OCR\tessdata", "eng+rus", EngineMode.Default))
             {
                 using (var img = PixConverter.ToPix(image))
                 {
