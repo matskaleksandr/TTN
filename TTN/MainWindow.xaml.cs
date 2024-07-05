@@ -349,14 +349,61 @@ namespace TTN
                 bool boolTOVARNRAZDEL = false;
 
                 DetermineEdgeType(lineCoordinates);
-                //MessageBox.Show(tables.Count.ToString());
+                
+
+                List<Tables> tablesUpd = new List<Tables>();
+                if (tables.Count > 0)
+                {
+                    tablesUpd.Add(tables[0]);
+                    if (tables.Count > 1)
+                    {
+                        for (int i = 1; i < tables.Count - 2; i++)
+                        {
+                            int u1 = tables[i].KORDy[tables[i].KORDy.Count - 1];
+                            int u2 = tables[i - 1].KORDy[tables[i - 1].KORDy.Count - 1];
+                            if (Math.Abs((u1) - (u2)) >= 20)
+                            {
+                                List<int> xs = new List<int>();
+                                //MessageBox.Show(tables[i].KORDx.Count.ToString() + "X" + i);
+                                for (int xi = 1; xi < tables[i].KORDx.Count; xi++)
+                                {
+                                    xs.Add(tables[i].KORDx[xi]);
+                                }
+                                tablesUpd[0].KORDx.AddRange(xs);
+
+                                List<int> ys = new List<int>();
+                                //MessageBox.Show(tables[i].KORDy.Count.ToString() + "Y" + i);
+                                for (int yi = 0; yi < tables[i].KORDy.Count; yi++)
+                                {
+                                    ys.Add(tables[i].KORDy[yi]);
+                                }
+                                tablesUpd[0].KORDy.AddRange(ys);
+
+                                //MessageBox.Show(tablesUpd[0].KORDx.Count.ToString() + "X");
+                                //MessageBox.Show(tablesUpd[0].KORDy.Count.ToString() + "Y");
+                            }
+                        }
+                    }
+                }
+
+                if (tablesUpd.Count > 0)
+                {
+                    //MessageBox.Show(tablesUpd[0].KORDx.Count.ToString() + "/#/");
+                    tables.Clear();
+                    tables = tablesUpd;
+                }
+
+                //MessageBox.Show(tables.Count.ToString() + "#");
+
                 Bitmap originalImage2 = new Bitmap(Path.Combine(outputDirectory, $"doc1.png"));
                 Bitmap copiedImage2 = new Bitmap(originalImage2.Width, originalImage2.Height);
 
                 if (tables.Count > 0)
                 {
+                    
                     foreach (var table in tables)
                     {
+                        //MessageBox.Show(table.KORDx.Count.ToString() + "X");
                         for (int i = table.KORDx[0]; i < table.KORDx[table.KORDx.Count - 1]; i++)
                         {
                             foreach (var y in table.KORDy)
@@ -384,6 +431,8 @@ namespace TTN
                     }
                 }
 
+               
+                
                 copiedImage2.Save(Path.Combine(outputDirectory, $"doc3.png"));
                 originalImage2.Dispose();
                 copiedImage2.Dispose();
@@ -627,12 +676,14 @@ namespace TTN
                                 Dispatcher.Invoke(() => cb5.IsChecked = true);
                                 if (tables.Count != 0)
                                 {
+                                    //MessageBox.Show(tables.Count.ToString());
                                     if (tables[0] != null)
                                     {
                                         bool p = false;
                                         for (int l = 0; l < tables[0].KORDy.Count - 1; l++)
                                         {
                                             System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[0], tables[0].KORDy[l]); // Верхний левый угол
+                                            
                                             System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[1], tables[0].KORDy[l + 1]); // Нижний правый угол
 
                                             using (Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png")))
@@ -643,8 +694,16 @@ namespace TTN
                                                     string tx = ExtractTextFromImage(croppedImage);
                                                     if (tx.IndexOf("№", StringComparison.OrdinalIgnoreCase) >= 0 || (tx.IndexOf("N", StringComparison.OrdinalIgnoreCase) >= 0))
                                                     {
-                                                        p = true;
-                                                        break;
+                                                        if (tx.Length > 10)
+                                                        {
+                                                            p = false;
+                                                            break;
+                                                        }                                                    
+                                                        else
+                                                        {
+                                                            p = true;
+                                                            break;
+                                                        }
                                                     }
                                                 }
                                             }
@@ -856,6 +915,14 @@ namespace TTN
         }
         static Bitmap CropImage(Bitmap original, System.Drawing.Rectangle cropArea)
         {
+            if(cropArea.Width < 1)
+            {
+                cropArea.Width = 1;
+            }
+            if (cropArea.Height < 1)
+            {
+                cropArea.Height = 1;
+            }
             Bitmap croppedImage = new Bitmap(cropArea.Width, cropArea.Height);
             using (Graphics g = Graphics.FromImage(croppedImage))
             {
