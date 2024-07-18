@@ -124,7 +124,7 @@ namespace TTN
                     }
                 }
             }
-            DebugLineZone(horizontalLines,verticalLines);
+            //DebugLineZone(horizontalLines,verticalLines);
             foreach (var lineH in horizontalLines)
             {
                 foreach (var lineV in verticalLines)
@@ -320,7 +320,7 @@ namespace TTN
                                         {
                                             listOfRows[nRow - 1] = rows;
                                         }
-                                        if (1 == 1)
+                                        if (1 < 1)
                                         {
                                             DebugTesseractZone(currentWord, originalImage, bounds, copiedImage);
                                         }
