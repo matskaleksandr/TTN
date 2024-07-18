@@ -124,13 +124,14 @@ namespace TTN
                     }
                 }
             }
+            DebugLineZone(horizontalLines,verticalLines);
             foreach (var lineH in horizontalLines)
             {
                 foreach (var lineV in verticalLines)
                 {
-                    if (Math.Abs(lineH.Item1 - lineV.Item1) < 100)
+                    if (Math.Abs(lineH.Item1 - lineV.Item1) < 150)
                     {
-                        if (Math.Abs(lineH.Item2 - lineV.Item2) < 100)
+                        if (Math.Abs(lineH.Item2 - lineV.Item2) < 150)
                         {
                             Tables table = new Tables(); //новая таблица
                             table.KORDx.Add(lineH.Item1);
@@ -140,7 +141,7 @@ namespace TTN
                             {
                                 if ((lineH2.Item2 >= lineV.Item2 && lineH2.Item2 <= lineV.Item4) && lineH != lineH2)
                                 {
-                                    if (Math.Abs(lineH2.Item1 - lineV.Item1) < 50)
+                                    if (Math.Abs(lineH2.Item1 - lineV.Item1) < 100)
                                     {
                                         table.KORDy.Add(lineH2.Item2);
                                         table.KORDy.Sort();
@@ -153,7 +154,7 @@ namespace TTN
                     else if ((lineV.Item1 - 20 >= lineH.Item1 && lineV.Item1 <= lineH.Item3 + 20) && tables.Count != 0) // XV находится между X12H
                     {
                         bool r = false;
-                        if (Math.Abs(tables[tables.Count - 1].KORDy[0] - lineV.Item2) < 100)
+                        if (Math.Abs(tables[tables.Count - 1].KORDy[0] - lineV.Item2) < 50)
                         {
                             tables[tables.Count - 1].KORDx.Add(lineV.Item1);
                             tables[tables.Count - 1].KORDx.Sort();
@@ -319,7 +320,7 @@ namespace TTN
                                         {
                                             listOfRows[nRow - 1] = rows;
                                         }
-                                        if (1 > 1)
+                                        if (1 == 1)
                                         {
                                             DebugTesseractZone(currentWord, originalImage, bounds, copiedImage);
                                         }
@@ -1038,6 +1039,29 @@ namespace TTN
             {
                 return FindParent<T>(parentObject2);
             }
+        }
+        private void DebugLineZone(List<Tuple<int, int, int, int>> HorL, List<Tuple<int, int, int, int>> VerL)
+        {
+            string outputDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "ConvertedImages");
+            Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png"));
+            Bitmap copiedImage = new Bitmap(originalImage.Width, originalImage.Height);
+            foreach(Tuple<int, int, int, int> line in HorL)
+            {
+                for(int x = line.Item1; x <= line.Item3; x++)
+                {
+                    copiedImage.SetPixel(x, line.Item2, System.Drawing.Color.GreenYellow);
+                }
+            }
+            foreach (Tuple<int, int, int, int> line in VerL)
+            {
+                for (int y = line.Item2; y <= line.Item4; y++)
+                {
+                    copiedImage.SetPixel(line.Item1, y, System.Drawing.Color.GreenYellow);
+                }
+            }
+            copiedImage.Save(Path.Combine(outputDirectory, $"doc4.png"));
+            originalImage.Dispose();
+            copiedImage.Dispose();
         }
         private void DebugTesseractZone(string currentWord, Bitmap originalImage, Tesseract.Rect bounds, Bitmap copiedImage)
         {
