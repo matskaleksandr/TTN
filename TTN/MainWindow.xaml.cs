@@ -105,7 +105,6 @@ namespace TTN
         {
             List<Tuple<int, int, int, int>> horizontalLines = new List<Tuple<int, int, int, int>>();
             List<Tuple<int, int, int, int>> verticalLines = new List<Tuple<int, int, int, int>>();
-
             foreach (var line in lines)
             {
                 int B1 = line.Item3 - line.Item1; //разница по X
@@ -124,24 +123,22 @@ namespace TTN
                     }
                 }
             }
-            //DebugLineZone(horizontalLines,verticalLines);
             foreach (var lineH in horizontalLines)
             {
                 foreach (var lineV in verticalLines)
                 {
-                    if (Math.Abs(lineH.Item1 - lineV.Item1) < 150)
+                    if (Math.Abs(lineH.Item1 - lineV.Item1) < 100)
                     {
-                        if (Math.Abs(lineH.Item2 - lineV.Item2) < 150)
+                        if (Math.Abs(lineH.Item2 - lineV.Item2) < 100)
                         {
                             Tables table = new Tables(); //новая таблица
                             table.KORDx.Add(lineH.Item1);
                             table.KORDy.Add(lineV.Item2);
-
                             foreach (var lineH2 in horizontalLines)
                             {
                                 if ((lineH2.Item2 >= lineV.Item2 && lineH2.Item2 <= lineV.Item4) && lineH != lineH2)
                                 {
-                                    if (Math.Abs(lineH2.Item1 - lineV.Item1) < 100)
+                                    if (Math.Abs(lineH2.Item1 - lineV.Item1) < 50)
                                     {
                                         table.KORDy.Add(lineH2.Item2);
                                         table.KORDy.Sort();
@@ -154,7 +151,7 @@ namespace TTN
                     else if ((lineV.Item1 - 20 >= lineH.Item1 && lineV.Item1 <= lineH.Item3 + 20) && tables.Count != 0) // XV находится между X12H
                     {
                         bool r = false;
-                        if (Math.Abs(tables[tables.Count - 1].KORDy[0] - lineV.Item2) < 50)
+                        if (Math.Abs(tables[tables.Count - 1].KORDy[0] - lineV.Item2) < 100)
                         {
                             tables[tables.Count - 1].KORDx.Add(lineV.Item1);
                             tables[tables.Count - 1].KORDx.Sort();
@@ -353,48 +350,31 @@ namespace TTN
                 
 
                 List<Tables> tablesUpd = new List<Tables>();
+
                 if (tables.Count > 0)
                 {
+                    // Добавляем первую таблицу в новый список
                     tablesUpd.Add(tables[0]);
-                    if (tables.Count > 1)
+
+                    // Объединяем все таблицы в первую таблицу
+                    for (int i = 1; i < tables.Count; i++)
                     {
-                        for (int i = 1; i < tables.Count - 2; i++)
-                        {
-                            int u1 = tables[i].KORDy[tables[i].KORDy.Count - 1];
-                            int u2 = tables[i - 1].KORDy[tables[i - 1].KORDy.Count - 1];
-                            if (Math.Abs((u1) - (u2)) >= 20)
-                            {
-                                List<int> xs = new List<int>();
-                                //MessageBox.Show(tables[i].KORDx.Count.ToString() + "X" + i);
-                                for (int xi = 1; xi < tables[i].KORDx.Count; xi++)
-                                {
-                                    xs.Add(tables[i].KORDx[xi]);
-                                }
-                                tablesUpd[0].KORDx.AddRange(xs);
+                        // Добавляем все элементы KORDx текущей таблицы в KORDx первой таблицы
+                        tablesUpd[0].KORDx.AddRange(tables[i].KORDx);
 
-                                List<int> ys = new List<int>();
-                                //MessageBox.Show(tables[i].KORDy.Count.ToString() + "Y" + i);
-                                for (int yi = 0; yi < tables[i].KORDy.Count; yi++)
-                                {
-                                    ys.Add(tables[i].KORDy[yi]);
-                                }
-                                tablesUpd[0].KORDy.AddRange(ys);
-
-                                //MessageBox.Show(tablesUpd[0].KORDx.Count.ToString() + "X");
-                                //MessageBox.Show(tablesUpd[0].KORDy.Count.ToString() + "Y");
-                            }
-                        }
+                        // Добавляем все элементы KORDy текущей таблицы в KORDy первой таблицы
+                        tablesUpd[0].KORDy.AddRange(tables[i].KORDy);
                     }
                 }
 
                 if (tablesUpd.Count > 0)
                 {
-                    //MessageBox.Show(tablesUpd[0].KORDx.Count.ToString() + "/#/");
                     tables.Clear();
                     tables = tablesUpd;
                 }
 
-                //MessageBox.Show(tables.Count.ToString() + "#");
+                tables[0].KORDx = tables[0].KORDx.Distinct().ToList();
+                tables[0].KORDy = tables[0].KORDy.Distinct().ToList();
 
                 Bitmap originalImage2 = new Bitmap(Path.Combine(outputDirectory, $"doc1.png"));
                 Bitmap copiedImage2 = new Bitmap(originalImage2.Width, originalImage2.Height);
@@ -683,9 +663,24 @@ namespace TTN
                                         bool p = false;
                                         for (int l = 0; l < tables[0].KORDy.Count - 1; l++)
                                         {
-                                            System.Drawing.Point topLeft = new System.Drawing.Point(tables[0].KORDx[0], tables[0].KORDy[l]); // Верхний левый угол
-                                            
-                                            System.Drawing.Point bottomRight = new System.Drawing.Point(tables[0].KORDx[1], tables[0].KORDy[l + 1]); // Нижний правый угол
+                                            System.Drawing.Point topLeft = new System.Drawing.Point(1,1);
+                                            System.Drawing.Point bottomRight = new System.Drawing.Point(1, 1);
+                                            try { 
+                                                topLeft = new System.Drawing.Point(tables[0].KORDx[0], tables[0].KORDy[l]); // Верхний левый угол
+                                            }
+                                            catch
+                                            {
+                                                topLeft = new System.Drawing.Point(tables[0].KORDx[0] + 1 , tables[0].KORDy[l] + 1); // Верхний левый угол
+                                            }
+                                            try
+                                            {
+                                                bottomRight = new System.Drawing.Point(tables[0].KORDx[1], tables[0].KORDy[l + 1]); // Нижний правый угол
+                                            }
+                                            catch
+                                            {
+                                                bottomRight = new System.Drawing.Point(tables[0].KORDx[1] + 1, tables[0].KORDy[l + 1] + 1); // Нижний правый угол
+                                            }
+
 
                                             using (Bitmap originalImage = new Bitmap(Path.Combine(outputDirectory, $"doc1.png")))
                                             {
