@@ -16,6 +16,9 @@ using System.Drawing;
 using System.Text.RegularExpressions;
 
 using static TTN.Table;
+using Aspose.Pdf;
+using Patagames.Pdf.Net.ColorSpace;
+using System.Windows.Markup;
 
 namespace TTN
 {
@@ -44,7 +47,7 @@ namespace TTN
         };
         public List<Grid> grid = new List<Grid>();
         Table tb = null;
-        List<DataRazdel1> items = new List<DataRazdel1>();
+        public List<DataRazdel1> items = new List<DataRazdel1>();
         public MainWindow()
         {
             InitializeComponent();
@@ -109,20 +112,29 @@ namespace TTN
             {
                 int B1 = line.Item3 - line.Item1; //разница по X
                 int B2 = line.Item4 - line.Item2; //разница по Y
-                if (B1 > B2)
+                if (line.Item2 >= yTable1-50 && line.Item2 <= yTable2+50)
                 {
-                    int B3 = (line.Item2 + line.Item4) / 2;
-                    horizontalLines.Add(Tuple.Create(line.Item1, B3, line.Item3, B3));
-                }
-                else
-                {
-                    int B3 = (line.Item1 + line.Item3) / 2;
-                    if (line.Item3 - line.Item1 <= 50)
+                    if (B1 > B2)
                     {
-                        verticalLines.Add(Tuple.Create(B3, line.Item2, B3, line.Item4));
+                        int B3 = (line.Item2 + line.Item4) / 2;
+                        horizontalLines.Add(Tuple.Create(line.Item1, B3, line.Item3, B3));
+                    }
+                    else
+                    {
+                        int B3 = (line.Item1 + line.Item3) / 2;
+                        if (line.Item3 - line.Item1 <= 50)
+                        {
+                            verticalLines.Add(Tuple.Create(B3, line.Item2, B3, line.Item4));
+                        }
                     }
                 }
             }
+            DebugLineZone(horizontalLines,verticalLines);
+            foreach (var lineV in verticalLines)
+            {
+                int R1 = lineV.Item4 - lineV.Item2;
+            }
+
             foreach (var lineH in horizontalLines)
             {
                 foreach (var lineV in verticalLines)
@@ -136,7 +148,7 @@ namespace TTN
                             table.KORDy.Add(lineV.Item2);
                             foreach (var lineH2 in horizontalLines)
                             {
-                                if ((lineH2.Item2 >= lineV.Item2 && lineH2.Item2 <= lineV.Item4) && lineH != lineH2)
+                                if ((lineH2.Item2 >= lineV.Item2 && lineH2.Item2 <= lineV.Item4 + 20) && lineH != lineH2)
                                 {
                                     if (Math.Abs(lineH2.Item1 - lineV.Item1) < 50)
                                     {
@@ -161,8 +173,13 @@ namespace TTN
                         {
                             if (Math.Abs(tables[tables.Count - 1].KORDy[0] - lineV.Item2) < 200 && r == false)
                             {
-                                tables[tables.Count - 1].KORDx.Add(lineV.Item1);
-                                tables[tables.Count - 1].KORDx.Sort();
+                                int R1 = lineV.Item4 - lineV.Item2;
+                                int R2 = tables[tables.Count - 1].KORDx.Last() - tables[tables.Count - 1].KORDx[0];
+                                if(Math.Abs(R1-R2) < 20)
+                                {
+                                    tables[tables.Count - 1].KORDx.Add(lineV.Item1);
+                                    tables[tables.Count - 1].KORDx.Sort();
+                                }                                
                             }
                         }
                     }
@@ -196,6 +213,8 @@ namespace TTN
                 }
             }
         }//обработка таблиц
+        int yTable2 = 0;
+        int yTable1 = 0;
         public async Task Scan()
         {
             if(grid.Count != 0)
@@ -227,7 +246,8 @@ namespace TTN
 
             await Task.Run(() =>
             {
-                
+                yTable1 = 0;
+                yTable2 = 0;    
                 bool isChecked = false;
                 Dispatcher.Invoke(() => isChecked = checkFilter.IsChecked == true);
                 Dispatcher.Invoke(() => progressBar.Value = 5);
@@ -241,7 +261,7 @@ namespace TTN
                 List<string> rows = new List<string>();
                 List<List<string>> listOfRows = new List<List<string>>();
 
-                bool tablecheck = false;
+                bool tablecheck = true;
 
                 using (var engine = new TesseractEngine(@"Tesseract-OCR\tessdata", "eng+rus", EngineMode.Default))
                 {
@@ -279,9 +299,22 @@ namespace TTN
                                         string currentWord = iterator.GetText(PageIteratorLevel.Word);
                                         iterator.TryGetBoundingBox(PageIteratorLevel.Word, out Tesseract.Rect bounds);
                                         string text = string.Join("", rows);
-                                        if (text.IndexOf("ТОВАРНЫЙ", StringComparison.OrdinalIgnoreCase) >= 0 && text.IndexOf("РАЗДЕЛ", StringComparison.OrdinalIgnoreCase) >= 0)
+                                        if (currentWord.ToUpperInvariant().IndexOf("ТОВАРНЫЙ", StringComparison.OrdinalIgnoreCase) >= 0)// && currentWord.ToUpperInvariant().IndexOf("РАЗДЕЛ", StringComparison.OrdinalIgnoreCase) >= 0)
+                                        {        
+                                            if(yTable1 == 0)
+                                            {
+                                                yTable1 = bounds.Y1;
+                                                MessageBox.Show(yTable1.ToString());
+                                            }
+                                        }
+                                        if (currentWord.ToUpperInvariant().IndexOf("ИТОГО", StringComparison.OrdinalIgnoreCase) >= 0)
                                         {
-                                            tablecheck = true;
+                                            if(yTable2 == 0)
+                                            {
+                                                yTable2 = bounds.Y1;
+                                                MessageBox.Show(yTable2.ToString());
+                                            }
+
                                         }
                                         if (tablecheck == true)
                                         {
@@ -333,6 +366,7 @@ namespace TTN
                     }
                 }
                 Dispatcher.Invoke(() => progressBar.Value = 50);
+                bool boolUNP = false;
                 bool boolDateHead = false;
                 bool boolGruzootpav = false;
                 bool boolGruzopoluch = false;
@@ -372,31 +406,67 @@ namespace TTN
                     tables.Clear();
                     tables = tablesUpd;
                 }
-
-                tables[0].KORDx = tables[0].KORDx.Distinct().ToList();
-                tables[0].KORDy = tables[0].KORDy.Distinct().ToList();
+                if (tables.Count > 0)
+                {
+                    tables[0].KORDx = tables[0].KORDx.Distinct().ToList();
+                    tables[0].KORDy = tables[0].KORDy.Distinct().ToList();
+                }
 
                 Bitmap originalImage2 = new Bitmap(Path.Combine(outputDirectory, $"doc1.png"));
                 Bitmap copiedImage2 = new Bitmap(originalImage2.Width, originalImage2.Height);
 
                 if (tables.Count > 0)
                 {
-                    
+
                     foreach (var table in tables)
                     {
-                        //MessageBox.Show(table.KORDx.Count.ToString() + "X");
-                        for (int i = table.KORDx[0]; i < table.KORDx[table.KORDx.Count - 1]; i++)
+                        table.KORDx.Sort();
+                        table.KORDy.Sort();
+
+                        List<int> filteredKORDx = new List<int>();
+                        filteredKORDx.Add(table.KORDx[0]);
+                        for (int i = 1; i < table.KORDx.Count; i++)
                         {
-                            foreach (var y in table.KORDy)
+                            if (table.KORDx[i] - filteredKORDx.Last() >= 15)
                             {
-                                copiedImage2.SetPixel(i, y, System.Drawing.Color.Yellow);
+                                filteredKORDx.Add(table.KORDx[i]);
                             }
                         }
-                        for (int i = table.KORDy[0]; i < table.KORDy[table.KORDy.Count - 1]; i++)
+                        List<int> filteredKORDy = new List<int>();
+                        filteredKORDy.Add(table.KORDy[0]);
+                        for (int i = 1; i < table.KORDy.Count; i++)
                         {
-                            foreach (var x in table.KORDx)
+                            if (table.KORDy[i] - filteredKORDy.Last() >= 15)
                             {
-                                copiedImage2.SetPixel(x, i, System.Drawing.Color.Yellow);
+                                filteredKORDy.Add(table.KORDy[i]);
+                            }
+                        }
+
+                        table.KORDx = filteredKORDx;
+                        table.KORDy = filteredKORDy;
+
+                        table.KORDx.Sort();
+                        table.KORDy.Sort();
+
+                        // Draw horizontal lines
+                        int startX = table.KORDx[0];
+                        int endX = table.KORDx[table.KORDx.Count - 1];
+                        foreach (var y in table.KORDy)
+                        {
+                            for (int x = startX; x <= endX; x++)
+                            {
+                                copiedImage2.SetPixel(x, y, System.Drawing.Color.Yellow);
+                            }
+                        }
+
+                        // Draw vertical lines
+                        int startY = table.KORDy[0];
+                        int endY = table.KORDy[table.KORDy.Count - 1];
+                        foreach (var x in table.KORDx)
+                        {
+                            for (int y = startY; y <= endY; y++)
+                            {
+                                copiedImage2.SetPixel(x, y, System.Drawing.Color.Yellow);
                             }
                         }
                     }
@@ -420,51 +490,66 @@ namespace TTN
                 Dispatcher.Invoke(() => progressBar.Value = 65);
                 for (int i = 0; i < listOfRows.Count; i++)
                 {
-
                     for (int j = 0; j < listOfRows[i].Count; j++)
                     {
+                        string lineString = string.Join("", listOfRows[i]);
                         string currentWord = listOfRows[i][j];
 
-                        if (currentWord.IndexOf("Грузоотправитель", StringComparison.OrdinalIgnoreCase) >= 0 && i < 8)
+                        if(boolUNP == false)
                         {
-                            string data = null;
-                            foreach (var row in listOfRows)
+                            string patternUNP = @"\b\d{9}\b";
+                            MatchCollection matchesUNP = Regex.Matches(lineString, patternUNP);
+                            if (matchesUNP.Count == 2)
                             {
-                                string line = string.Join("", row);
-                                if (line.IndexOf("УНП", StringComparison.OrdinalIgnoreCase) >= 0)
-                                {
-                                    string[] lineData = line.Split();
-                                    data = lineData[2];
-                                    Dispatcher.Invoke(() => cb1.IsChecked = true);
-                                    break;
-                                }
+                                string number1 = matchesUNP[0].Value;
+                                string number2 = matchesUNP[1].Value;
+                                Dispatcher.Invoke(() => cb1.IsChecked = true);
+                                Dispatcher.Invoke(() => AddData(0, number1));
+                                Dispatcher.Invoke(() => AddData(1, number2));
+                                boolUNP = true;
                             }
-                            if (documentV != null)
-                            {
-                                documentV.GruzOtpr = data;
-                            }
-                            Dispatcher.Invoke(() => AddData(0, data));
                         }
-                        if (currentWord.IndexOf("Грузополучатель", StringComparison.OrdinalIgnoreCase) >= 0 && i < 8)
-                        {
-                            string data = null;
-                            foreach (var row in listOfRows)
-                            {
-                                string line = string.Join("", row);
-                                if (line.IndexOf("УНП", StringComparison.OrdinalIgnoreCase) >= 0)
-                                {
-                                    string[] lineData = line.Split();
-                                    data = lineData[3];
-                                    Dispatcher.Invoke(() => cb1.IsChecked = true);
-                                    break;
-                                }
-                            }
-                            if (documentV != null)
-                            {
-                                documentV.GruzPoluch = data;
-                            }
-                            Dispatcher.Invoke(() => AddData(1, data));
-                        }
+
+                        //if (currentWord.IndexOf("Грузоотправитель", StringComparison.OrdinalIgnoreCase) >= 0 && i < 8)
+                        //{
+                        //    string data = null;
+                        //    foreach (var row in listOfRows)
+                        //    {
+                        //        string line = string.Join("", row);
+                        //        if (line.IndexOf("УНП", StringComparison.OrdinalIgnoreCase) >= 0)
+                        //        {
+                        //            string[] lineData = line.Split();
+                        //            data = lineData[2];
+                        //            Dispatcher.Invoke(() => cb1.IsChecked = true);
+                        //            break;
+                        //        }
+                        //    }
+                        //    if (documentV != null)
+                        //    {
+                        //        documentV.GruzOtpr = data;
+                        //    }
+                        //    Dispatcher.Invoke(() => AddData(0, data));
+                        //}
+                        //if (currentWord.IndexOf("Грузополучатель", StringComparison.OrdinalIgnoreCase) >= 0 && i < 8)
+                        //{
+                        //    string data = null;
+                        //    foreach (var row in listOfRows)
+                        //    {
+                        //        string line = string.Join("", row);
+                        //        if (line.IndexOf("УНП", StringComparison.OrdinalIgnoreCase) >= 0)
+                        //        {
+                        //            string[] lineData = line.Split();
+                        //            data = lineData[3];
+                        //            Dispatcher.Invoke(() => cb1.IsChecked = true);
+                        //            break;
+                        //        }
+                        //    }
+                        //    if (documentV != null)
+                        //    {
+                        //        documentV.GruzPoluch = data;
+                        //    }
+                        //    Dispatcher.Invoke(() => AddData(1, data));
+                        //}
                         if (boolDateHead == false)
                         {
                             string pattern = @"\b\d{1,2}\s(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s\d{4}\b";
@@ -1306,7 +1391,7 @@ namespace TTN
         {
             if (tb == null)
             {
-                tb = new Table(items);
+                tb = new Table(items,this);
                 tb.Closed += Tb_Closed;
                 tb.Show();
             }

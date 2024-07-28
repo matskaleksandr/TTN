@@ -20,8 +20,11 @@ namespace TTN
     public partial class Table : Window
     {
         List<DataRazdel1> items_ = new List<DataRazdel1>();
-        public Table(List<DataRazdel1> items)
+        MainWindow window = null;
+
+        public Table(List<DataRazdel1> items, MainWindow wind)
         {
+            window = wind;
             InitializeComponent();
             dataGrid.ItemsSource = items;
         }
@@ -37,6 +40,12 @@ namespace TTN
             public string СуммаНДС { get; set; }
             public string СтоимостьСНДС { get; set; }
             public string Примечание { get; set; }
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            items_ = dataGrid.ItemsSource.Cast<DataRazdel1>().ToList();
+            window.items = items_;
         }
     }
 }

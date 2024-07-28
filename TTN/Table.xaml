@@ -65,6 +65,6 @@
     </Window.Resources>
     <Grid>
         <DataGrid x:Name="dataGrid" AutoGenerateColumns="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-        <Button Content="Применить" HorizontalAlignment="Right" VerticalAlignment="Bottom" Style="{StaticResource RoundedButtonStyle}" Width="134" Height="32"/>
+        <Button Content="Применить" Click="Button_Click" HorizontalAlignment="Right" VerticalAlignment="Bottom" Style="{StaticResource RoundedButtonStyle}" Width="134" Height="32"/>
     </Grid>
 </Window>
