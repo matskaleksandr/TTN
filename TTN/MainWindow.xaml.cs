@@ -304,7 +304,7 @@ namespace TTN
                                             if(yTable1 == 0)
                                             {
                                                 yTable1 = bounds.Y1;
-                                                MessageBox.Show(yTable1.ToString());
+                                                //MessageBox.Show(yTable1.ToString());
                                             }
                                         }
                                         if (currentWord.ToUpperInvariant().IndexOf("ИТОГО", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -312,7 +312,7 @@ namespace TTN
                                             if(yTable2 == 0)
                                             {
                                                 yTable2 = bounds.Y1;
-                                                MessageBox.Show(yTable2.ToString());
+                                                //MessageBox.Show(yTable2.ToString());
                                             }
 
                                         }
